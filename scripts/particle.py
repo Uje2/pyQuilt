@@ -66,6 +66,21 @@ class Spark:
         self.move()
         self.draw(surf, offset=offset)
 
+class Sparks:
+    def __init__(self, pos, ranges, speed):
+        self.x_range = ranges[0]
+        self.y_range = ranges[1]
+        self.speed = speed
+        self.pos = list(pos)
+        self.sparks = []
+
+    def add_spark(self):
+        self.sparks.append(Spark(self.pos, [random.randint(1, self.speed) * self.x_range, random.randint(1, self.speed) * self.y_range], self.speed))
+    
+    def update(self, surf, offset=[0, 0]):
+        for spark in self.sparks:
+            spark.update(surf, offset)
+
 class Demo:
     def __init__(self, pos, angle, speed):
         self.pos = list(pos)
@@ -89,7 +104,7 @@ class Demo:
         self.draw(surf)
 
 class Trail:
-    def __init__(self, pos, size, fade=0.1, color="lime"):
+    def __init__(self, pos, size: int | float, fade=0.1, color="lime"):
         self.color = color
         self.pos = list(pos)
         self.size = size
@@ -108,6 +123,20 @@ class Trail:
         self.trail()
         self.draw(surf=surf, offset=offset)
 
+class Trails:
+    def __init__(self, size: int | float = 5, fade: float=0.1, color: str | tuple="lime"):
+        self.trails : list = []
+        self.color = color
+        self.fade = fade
+        self.size = size
+
+    def follow(self, pos):
+        self.trails.append(Trail(pos, self.size, self.fade, self.color))
+    
+    def update(self, pos, surf, offset=[0, 0]):
+        self.follow(list(pos))
+        for trail in self.trails:
+            trail.update(surf, offset)
 
 class Shockwave:
     def __init__(self, pos, size=2, width=5, color="magenta"):

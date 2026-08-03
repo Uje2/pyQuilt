@@ -3,9 +3,9 @@ import sys
 import os
 import json
 
-from scripts.utils import load_image, extract_image, join, draw_rect, multiply_lists, add_lists
+from scripts.utils import load_image, extract_image, join, draw_rect, multiply_lists, add_lists, scroll_control,Timer, load_images, load_image2, load_loadable_images
 from scripts.tilemap import Tilemp
-from scripts.widgets import TitleBar, Table, Dialog, text_input
+from scripts.widgets import TitleBar, Table, Dialog, text_input, Custom_Table, text_input2
 
 class LevelEditor:
     def __init__(self):
@@ -35,6 +35,7 @@ class LevelEditor:
         self.current_layer = 0
         self.used = []
         self.bkg_color = (0, 10, 30)
+        self.other_assets = {}
     
     def load_assets(self):
         runn = True
@@ -204,7 +205,7 @@ class LevelEditor:
     
     def save_asset_path(self):
         f = open("data/extracted_data.json", "w")
-        data = {"assets": self.savable_assets, "physics": list(self.level.physics), "tilesize": self.tilesize, "img_path": self.path, "asset_path": self.asset_path}
+        data = {"assets": self.savable_assets, "physics": list(self.level.physics), "tilesize": self.tilesize, "img_path": self.path, "asset_path": self.asset_path, "other_assets": self.other_assets}
         json.dump(data, f)
         f.close()
     
@@ -595,6 +596,86 @@ class LevelEditor:
 
             pygame.display.flip()
 
+    def get_other_assets(self):
+        running = True
+        PATH = "data/images/other"
+        used_path = PATH
+        pressed = False
+        scroll = [0, 0]
+        timer = Timer(60, 1)
+        path_list = [PATH]
+        hist = PATH
+        timer.start()
+        name = ""
+        title_bar = TitleBar(self.font, self.display, "Other Assets")
+        #tab = Custom_Table(self.font, [int(self.display.get_width() // 3), 32], [200, 16], 1, 20)
+        tab = Custom_Table(self.font, [0, 32], [self.display.get_width(), 16], 1, 20)
+        saveImageDialog = Dialog(self.font, "Image added", [0, 200], [150, 32], ["green", "aqua"])
+        while running:
+            self.display.fill(self.bkg_color)
+            scroll_control(scroll)
+            tab.add_item(hist, [0, 0])
+            for i, folder in enumerate(os.listdir(used_path)):
+                tab.add_item(folder, [0, i+1])
+            tab.set_row_font_color(0, "red")
+            selec = tab.mouse_select(0, self.render_scale, scroll)
+            if selec != "" and selec != "...":
+                if timer.done:
+                    used_path = used_path + "/" + selec
+                    hist = used_path
+                    path_list.append("/"+selec)
+                    tab.empty()
+                    timer.start()
+            selec2 = tab.mouse_select(2, self.render_scale, scroll)
+            if selec2 != "" and selec2 != "...":
+                if timer.done:
+                    imgs = ["png", "jpeg", "jpg"]
+                    sounds = ["wav", "mp3"]
+                    temp = selec2.split(".")
+                    if len(temp) > 1:
+                        if temp[1] in imgs:
+                            name = text_input2([self.display, self.screen], self.font, name, "Image label")
+                            img = load_image(used_path + "/" + selec2)
+                            self.savable_assets[name] = [{"path": used_path + "/" + selec2, "size": img.get_size(), "pos": [0, 0]}]
+                            self.assets[name] = [img]
+                        elif temp[1] in sounds:
+                            text_input2([self.display, self.screen], self.font, name, "Sound Label")
+                            self.other_assets[name] = [{"type": "sound", "path": used_path + "/" + selec2}]
+                            
+                    else:
+                        name = text_input2([self.display, self.screen], self.font, name, "Images Label")
+                        imgs = load_images(used_path + "/" + selec2)
+                        self.assets[name] = imgs
+                        self.savable_assets[name] = load_loadable_images(used_path + "/" + selec2)
+            timer.update()
+            #tab.set_table_opacity(100)
+            tab.draw(self.display, scroll)
+            title_bar.update()
+            self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), [0, 0])
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        running = False
+                    if event.key == pygame.K_l:
+                        pressed = True
+                    if event.key == pygame.K_RETURN:
+                        running = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 2:
+                        if len(path_list) > 1:
+                            path_list.pop(-1)
+                            used_path = ""
+                            for part in path_list:
+                                used_path += part
+                                hist = used_path
+                        tab.empty()
+                        
+                        
+            pygame.display.flip()
+            self.clock.tick(60)
 
     def run(self):
         running = True
@@ -694,6 +775,8 @@ class LevelEditor:
                         self.add_block()
                     if event.key == pygame.K_KP_0:
                         self.select_assets()
+                    if event.key == pygame.K_KP_DIVIDE:
+                        self.get_other_assets()
                     
                     
             pygame.display.update()

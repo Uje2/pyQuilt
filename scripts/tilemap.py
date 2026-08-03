@@ -123,13 +123,13 @@ class Tilemp:
         ...
     
     def save_map(self, path):
-        f = open(f"maps/{path}.json", "w")
+        f = open(f"data/maps/{path}.json", "w")
         data = {"tilesize": self.tilesize, "tilemap": self.tilemap, "ongrid": self.ongrid, "offgrid": self.offgrid, "physics": self.physics}
         json.dump(data, f)
         f.close()
 
     def load_map(self, path):
-        f = open(f"maps/{path}.json", "r")
+        f = open(f"data/maps/{path}.json", "r")
         data = json.load(f)
         self.tilemap = data["tilemap"]
         self.tilesize = data["tilesize"]
@@ -207,6 +207,12 @@ class Tilemp:
                         tile = self.tilemap[loc]
                         img = self.game.assets[tile["type"]][tile["variant"]].copy()
                         #img.set_alpha(50 if self.current_layer != 0 else 255)
+                        surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
+                    if loc in self.layers["block"][1]:
+                        tile = self.phys_blocks[loc]
+                        img = pygame.Surface(self.tilesize)
+                        pygame.draw.rect(img, tile["type"], [0, 0, self.tilesize[0], self.tilesize[1]], 0 if tile["variant"] == 0 else 2)
+                        img.set_alpha(50 if self.current_layer != 2 else 255)
                         surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
 
 
