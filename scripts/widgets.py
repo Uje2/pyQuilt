@@ -505,6 +505,15 @@ class Dialog:
         self.done = False
         self.now_size = [5, self.size[1]]
 
+    def start_with_text(self, text):
+        self.text = text
+        self.active = True
+        self.reset()
+
+    def start(self):
+        self.active = True
+        self.reset()
+
 class Custom_Table:
     def __init__(self, font, pos, size, columns, rows, font_color="aqua"):
         self.columns = columns

@@ -41,7 +41,7 @@ class PhysicsEntity:
                     entity_rect.top = collider.bottom
                     self.collisions["top"] = True
                 self.pos[1] = entity_rect.y
-
+        
         self.pos[0] += frame_movement[0]
         entity_rect = self.get_collider()
         for collider in colliders:
@@ -52,13 +52,14 @@ class PhysicsEntity:
                 if frame_movement[0] < 0:
                     entity_rect.left = collider.right
                     self.collisions["left"] = True
-                self.pos[1] = entity_rect.y
+                self.pos[0] = entity_rect.x
 
+        
         if self.has_gravity:
             if not self.collisions["bottom"]:
                 self.velocity[1] = min(5, self.velocity[1] + self.gravity)
             if self.collisions["bottom"] or self.collisions["top"]:
-                self.velocity[0] = 0
+                self.velocity[1] = 0
 
     def get_wasd_input(self):
         self.crouch = False
@@ -106,7 +107,7 @@ class PhysicsEntity:
             else:
                 self.direction[1] = 0
 
-    def update(self, colliders, surf):
+    def update(self, colliders, surf, offset=[0, 0]):
         self.get_wasd_input()
         self.move(movement=self.direction, colliders=colliders)
-        self.draw_collider(surf)
+        self.draw_collider(surf, offset=offset)

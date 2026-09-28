@@ -3,7 +3,7 @@ import sys
 import os
 import json
 
-from scripts.utils import load_image, extract_image, join, draw_rect, multiply_lists, add_lists, scroll_control,Timer, load_images, load_image2, load_loadable_images
+from scripts.utils import load_image, extract_image, join, draw_rect, multiply_lists, add_lists, scroll_control,Timer, load_images, load_image2, load_loadable_images, get_game_assets, get_the_other_assets
 from scripts.tilemap import Tilemp
 from scripts.widgets import TitleBar, Table, Dialog, text_input, Custom_Table, text_input2
 
@@ -204,7 +204,9 @@ class LevelEditor:
         #self.savable_image(self.savable_assets[self.])
     
     def save_asset_path(self):
-        f = open("data/extracted_data.json", "w")
+        tt = ""
+        text = text_input2([self.display, self.screen], self.font, tt, "Asset FileName")
+        f = open("data/extracted_data/" + text + ".json", "w")
         data = {"assets": self.savable_assets, "physics": list(self.level.physics), "tilesize": self.tilesize, "img_path": self.path, "asset_path": self.asset_path, "other_assets": self.other_assets}
         json.dump(data, f)
         f.close()
@@ -431,6 +433,7 @@ class LevelEditor:
         selecting = False
         select = False
         add_physics_dialog = Dialog(self.font, "Added to physics", [0, self.display.get_height() - 96], [200, 32], ["green", "aqua"], 5)
+        add_spawner_dialog = Dialog(self.font, "Added to Spawners", [0, self.display.get_height() - 96], [200, 32], ["green", "aqua"], 5)
         add_decor_dialog = Dialog(self.font, "Added to Decor", [0, self.display.get_height() - 64], [200, 32], ["green", "aqua"], 5)
         add_offgrid_dialog = Dialog(self.font, "Added to offgrid", [0, self.display.get_height() - 32], [200, 32], ["green", "aqua"], 5)
         add_select_dialog = Dialog(self.font, "Added to Selection", [0, self.display.get_height() - 96], [200, 32], ["green", "aqua"], 5)
@@ -453,6 +456,7 @@ class LevelEditor:
                     draw_rect(multiply_lists(ti_sel[0], self.tilesize), add_lists(multiply_lists(tile_pos, self.tilesize), self.tilesize), self.display, offset=self.scroll)
                 else:
                     draw_rect(multiply_lists(ti_sel[0], self.tilesize), add_lists(multiply_lists(ti_sel[1], self.tilesize), self.tilesize), self.display, "blue", offset=self.scroll)
+            add_spawner_dialog.update(self.display)
             add_physics_dialog.update(self.display)
             add_offgrid_dialog.update(self.display)
             add_decor_dialog.update(self.display)
@@ -568,6 +572,10 @@ class LevelEditor:
                         self.level.offgrid_decor.add(text)
                         add_offgrid_dialog.active = True
                         add_offgrid_dialog.reset()
+                    if event.key == pygame.K_F6:
+                        self.level.spawners.add(text)
+                        add_spawner_dialog.active = True
+                        add_spawner_dialog.reset()
                     if event.key == pygame.K_RETURN:
                         if text in self.assets:
                             new = join(self.assets[text], self.images)
@@ -607,10 +615,13 @@ class LevelEditor:
         hist = PATH
         timer.start()
         name = ""
+
         title_bar = TitleBar(self.font, self.display, "Other Assets")
         #tab = Custom_Table(self.font, [int(self.display.get_width() // 3), 32], [200, 16], 1, 20)
         tab = Custom_Table(self.font, [0, 32], [self.display.get_width(), 16], 1, 20)
         saveImageDialog = Dialog(self.font, "Image added", [0, 200], [150, 32], ["green", "aqua"])
+        saveImagesDialog = Dialog(self.font, "Images added", [0, 200], [150, 32], ["green", "aqua"])
+        saveSoundDialog = Dialog(self.font, "Image added", [0, 200], [150, 32], ["green", "aqua"])
         while running:
             self.display.fill(self.bkg_color)
             scroll_control(scroll)
@@ -627,6 +638,9 @@ class LevelEditor:
                     tab.empty()
                     timer.start()
             selec2 = tab.mouse_select(2, self.render_scale, scroll)
+            saveImageDialog.update(self.display)
+            saveImagesDialog.update(self.display)
+            saveSoundDialog.update(self.display)
             if selec2 != "" and selec2 != "...":
                 if timer.done:
                     imgs = ["png", "jpeg", "jpg"]
@@ -638,15 +652,21 @@ class LevelEditor:
                             img = load_image(used_path + "/" + selec2)
                             self.savable_assets[name] = [{"path": used_path + "/" + selec2, "size": img.get_size(), "pos": [0, 0]}]
                             self.assets[name] = [img]
+                            saveImageDialog.active = True
+                            saveImageDialog.reset()
                         elif temp[1] in sounds:
                             text_input2([self.display, self.screen], self.font, name, "Sound Label")
                             self.other_assets[name] = [{"type": "sound", "path": used_path + "/" + selec2}]
+                            saveSoundDialog.active = True
+                            saveSoundDialog.reset()
                             
                     else:
                         name = text_input2([self.display, self.screen], self.font, name, "Images Label")
                         imgs = load_images(used_path + "/" + selec2)
                         self.assets[name] = imgs
                         self.savable_assets[name] = load_loadable_images(used_path + "/" + selec2)
+                        saveImagesDialog.active = True
+                        saveImagesDialog.reset()
             timer.update()
             #tab.set_table_opacity(100)
             tab.draw(self.display, scroll)
@@ -674,6 +694,89 @@ class LevelEditor:
                         tab.empty()
                         
                         
+            pygame.display.flip()
+            self.clock.tick(60)
+
+    def categorise_assets(self):
+        title_bar = TitleBar(self.font, self.display, "Categorise Assets")
+        categories = ["spawners", "decor", "physics", "ongrid", "offgrid_decor", "blocks"]
+        if self.assets:
+            types = list(self.assets)
+            assets_tab = Custom_Table(self.font, [0, 32], [int(self.display.get_width() // 2) - 20, 16], 1, len(types) + 1)
+            assets_tab.add_item("ASSETS", [0, 0])
+            assets_tab.set_row_font_color(0, "orange")
+            for i ,t in enumerate(types):
+                assets_tab.add_item(t, [0, i + 1])
+        else:
+            assets_tab = Custom_Table(self.font, [0, 32], [int(self.display.get_width() // 2) - 20, 16], 1, 10)
+            assets_tab.add_item("ASSETS", [0, 0])
+            assets_tab.set_row_font_color(0, "orange")
+        category_tab = Custom_Table(self.font, [int(self.display.get_width() // 2), 32], [int(self.display.get_width() // 2), 16], 1, len(categories) + 1)
+        category_tab.add_item("CATEGORIES", [0, 0])
+        category_tab.set_row_font_color(0, "orange")
+        for i, cat in enumerate(categories):
+            category_tab.add_item(cat, [0, i + 1])
+        running = True
+        scroll = [0, 0]
+        asset = ""
+        section_dialog = Dialog(self.font, "", [200, 0], [200, 0], ["green", "aqua"])
+        while running:
+            self.display.fill(self.bkg_color)
+            assets_tab.draw(self.display, scroll)
+            category_tab.draw(self.display)
+            asset_selec = assets_tab.mouse_select(0, self.render_scale, scroll)
+            cat_selec = category_tab.mouse_select(0, self.render_scale)
+            if asset_selec != "" and asset_selec != "...":
+                asset = asset_selec
+            if cat_selec != "" and cat_selec != "...":
+                if asset != "":
+                    match cat_selec:
+                        case  "spawners":
+                            self.level.spawners.add(asset)
+                            section_dialog.start_with_text(f"{asset_selec} added to {cat_selec}")
+                        case "decor":
+                            self.level.decor.add(asset)
+                            section_dialog.start_with_text(f"{asset_selec} added to {cat_selec}")
+                        case "physics":
+                            self.level.physics.add(asset)
+                            section_dialog.start_with_text(f"{asset_selec} added to {cat_selec}")
+                        case "ongrid":
+                            self.level.ongrid.add(asset)
+                            section_dialog.start_with_text(f"{asset_selec} added to {cat_selec}")
+                        case "offgrid_decor":
+                            self.level.offgrid_decor.add(asset)
+                            section_dialog.start_with_text(f"{asset_selec} added to {cat_selec}")
+                        case "blocks":
+                            self.level.blocks.add(asset)
+                            section_dialog.start_with_text(f"{asset_selec} added to {cat_selec}")
+
+            scroll_control(scroll, 4)
+            section_dialog.update(self.display)
+            title_bar.update()
+            self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), (0, 0))
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        running = False
+
+            pygame.display.flip()
+            self.clock.tick(60)
+
+    def get_saved_assets(self):
+        title_bar = TitleBar(self.font, self.display, "GET SAVED ASSETS")
+        typ = "assets"
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        running = False
             pygame.display.flip()
             self.clock.tick(60)
 
@@ -777,6 +880,8 @@ class LevelEditor:
                         self.select_assets()
                     if event.key == pygame.K_KP_DIVIDE:
                         self.get_other_assets()
+                    if event.key == pygame.K_PAGEDOWN:
+                        self.categorise_assets()
                     
                     
             pygame.display.update()

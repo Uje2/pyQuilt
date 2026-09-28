@@ -23,8 +23,9 @@ class Simulator:
         self.active = "None"
         self.level = Tilemp(self, [16, 16])
         self.player = PhysicsEntity([50, 50])
-        get_game_assets("data/extracted_data.json", self.assets)
-        print(self.assets)
+        get_game_assets("data/allied/steel_test.json", self.assets)
+        self.level.assets = self.assets
+        print(self.level.assets)
 
     def anchor_tweaks(self):
         ...
@@ -72,11 +73,17 @@ class Simulator:
         count = 0
         title = TitleBar(self.font, self.display, "Simulator: Widget Testing")
         text = ""
-        self.level.load_map("example")
+        self.level.load_custom_map("data/allied/steel_test.json")
+        self.level.layering()
+        #self.level.physics = {"steel_mid_two", "steel_upper_two", "steel_back", "steel_upper_one"}
+        scroll = [0, 0]
         while run:
+            scroll[0] += (self.player.pos[0] - self.display.get_width() / 2) - scroll[0]
+            scroll[1] += (self.player.pos[1] - self.display.get_height() / 2) - scroll[1]
+            r_scroll = [int(scroll[0]), int(scroll[1])]
             self.display.fill((20, 50, 90))
-            self.player.update([], self.display)
-            self.level.draw(self.display)
+            self.player.update(self.level.physics_around(self.player.pos), self.display, r_scroll)
+            self.level.draw(self.display, r_scroll)
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), [0, 0])
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:

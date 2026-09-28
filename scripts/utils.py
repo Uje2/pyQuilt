@@ -198,7 +198,15 @@ def get_game_assets(path, dicty):
 def get_the_other_assets(path, dicty):
     f = open(path, "r")
     data = json.load(f)
-    assets = data["assets"]
+    assets = data["other_assets"]
+    for asset in assets:
+            images = assets[asset]
+            temp = []
+            for image in images:
+                temp.append(extract_image(load_image(image["path"]), image["size"], image["pos"]))
+            dicty[asset] = temp
+    return dicty
+    
 
 def multiply_lists(list1, list2):
     return [list1[0] * list2[0], list1[1] * list2[1]]
@@ -235,6 +243,17 @@ def scroll_control(variable, amnt=4):
     if key[pygame.K_LEFT]:
         variable[0] -= amnt
     if key[pygame.K_RIGHT]:
+        variable[0] += amnt
+
+def wasd_scroll_control(variable, amnt=4):
+    key = pygame.key.get_pressed()
+    if key[pygame.K_w]:
+        variable[1] -= amnt
+    if key[pygame.K_s]:
+        variable[1] += amnt
+    if key[pygame.K_a]:
+        variable[0] -= amnt
+    if key[pygame.K_d]:
         variable[0] += amnt
 
 def organise_poses(pos1, pos2):
