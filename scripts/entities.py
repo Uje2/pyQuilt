@@ -14,11 +14,18 @@ class PhysicsEntity:
         self.gravity = GRAVITY
         self.collisions = {"top": False, "bottom": False, "left": False, "right": False}
         self.jumper = True
-        self.has_gravity = True
+        self.has_gravity = False
+        self.rotated = False
+        self.rotate_request = "vert"
+        self.current_rot = "vert"
         self.crouch = False
+        self.id = 0
 
     def get_collider(self):
-        return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
+        if not self.rotated:
+            return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
+        else:
+            return pygame.Rect(self.pos[0], self.pos[1], self.size[1], self.size[0])
     
     def draw_collider(self, surf, offset=[0, 0], color="green"):
         temp = self.get_collider()
@@ -26,6 +33,19 @@ class PhysicsEntity:
         pygame.draw.rect(self.image, color, rect)
         pygame.draw.rect(surf, color, rect)
         #pygame.draw.rect(self.image, color, temp)
+
+    def rotate_rect(self, colliders):
+        if self.rotate_request == "vert":
+            self.rotated = False
+        elif self.rotate_request == "hor":
+            self.rotated = True
+        rect = self.get_collider()
+        for collider in colliders:
+            if rect.colliderect(collider):
+                if self.rotate_request == "vert":
+                    self.rotated = True
+                elif self.rotate_request == "hor":
+                    self.rotated = False
 
     def move(self, movement, colliders):
         self.collisions = {"top": False, "bottom": False, "left": False, "right": False}
@@ -54,6 +74,8 @@ class PhysicsEntity:
                     self.collisions["left"] = True
                 self.pos[0] = entity_rect.x
 
+        self.rotate_rect(colliders)
+
         
         if self.has_gravity:
             if not self.collisions["bottom"]:
@@ -71,19 +93,25 @@ class PhysicsEntity:
         else:
             self.direction[0] = 0
 
-        if self.jumper:
+        if self.jumper and self.has_gravity:
             if keys[pygame.K_w]:
                 self.velocity[1] = jump_height  
             elif keys[pygame.K_s]:
                 self.crouch = True
         else: 
+            if keys[pygame.K_a] or keys[pygame.K_d]:
+                self.rotate_request = "hor"
+            elif keys[pygame.K_w] or keys[pygame.K_s]:
+                self.rotate_request = "vert"
+            else:
+                self.rotate_request = "vert"
             if keys[pygame.K_w]:
                 self.direction[1] = -1
             elif keys[pygame.K_s]:
                 self.direction[1] = 1
             else:
                 self.direction[1] = 0
-
+            
     def get_arrow_input(self):
         self.crouch = False
         keys = pygame.key.get_pressed()
@@ -94,12 +122,18 @@ class PhysicsEntity:
         else:
             self.direction[0] = 0
 
-        if self.jumper:
+        if self.jumper and self.has_gravity:
             if keys[pygame.K_UP]:
                 self.velocity[1] = jump_height  
             elif keys[pygame.K_DOWN]:
                 self.crouch = True
         else: 
+            if keys[pygame.K_UP] or keys[pygame.K_DOWN]:
+                self.rotate_request = "vert"
+            elif keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]:
+                self.rotate_request = "hor"
+            else:
+                self.rotate_request = "vert"
             if keys[pygame.K_UP]:
                 self.direction[1] = -1
             elif keys[pygame.K_DOWN]:
@@ -111,3 +145,13 @@ class PhysicsEntity:
         self.get_wasd_input()
         self.move(movement=self.direction, colliders=colliders)
         self.draw_collider(surf, offset=offset)
+
+    def update2(self, colliders, surf, offset=[0, 0]):
+        self.get_arrow_input()
+        self.move(movement=self.direction, colliders=colliders)
+        self.draw_collider(surf, offset=offset)
+
+    def change_gravity_status(self):
+        self.has_gravity = not self.has_gravity
+        self.rotate_request = "vert"
+        self.velocity[1] = 0

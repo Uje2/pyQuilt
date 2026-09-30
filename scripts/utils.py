@@ -87,7 +87,15 @@ def mouse_scroll_silders(sliders):
             #slider.reset_range()
             slider.active = False
 
+def give_player_id(player, variable):
+    player.id = variable
+    variable += 1
+    return variable
 
+def give_ids(players, variable):
+    for player in players:
+        variable = give_player_id(player, variable)
+    return variable
 
 
 class Timer:

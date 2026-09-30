@@ -207,13 +207,13 @@ class LevelEditor:
         tt = ""
         text = text_input2([self.display, self.screen], self.font, tt, "Asset FileName")
         f = open("data/extracted_data/" + text + ".json", "w")
-        data = {"assets": self.savable_assets, "physics": list(self.level.physics), "tilesize": self.tilesize, "img_path": self.path, "asset_path": self.asset_path, "other_assets": self.other_assets}
+        data = {"assets": self.savable_assets, "physics": list(self.level.physics), "tilesize": self.tilesize, "img_path": self.path, "asset_path": self.asset_path, "other_assets": self.other_assets, "blocks": list(self.level.blocks), "spawners":list(self.level.spawners)}
         json.dump(data, f)
         f.close()
     
     def save_tilemap(self, name):
         f = open(f"data/allied/{name}.json", "w")
-        data = {"tilemap": self.level.tilemap, "ongrid": self.level.ongrid, "offgrid": self.level.offgrid, "tilesize": self.tilesize, "physics": list(self.level.physics), "img_path": self.path, "assets": self.savable_assets, "imgs": self.used, "blocks": list(self.level.blocks), "phys_blocks": self.level.phys_blocks}
+        data = {"tilemap": self.level.tilemap, "spawners": self.level.spawners,"ongrid": self.level.ongrid, "offgrid": self.level.offgrid, "tilesize": self.tilesize, "physics": list(self.level.physics), "img_path": self.path, "assets": self.savable_assets, "imgs": self.used, "blocks": list(self.level.blocks), "phys_blocks": self.level.phys_blocks}
         pack = {}
         json.dump(data, f)
         f.close() 
@@ -621,7 +621,7 @@ class LevelEditor:
         tab = Custom_Table(self.font, [0, 32], [self.display.get_width(), 16], 1, 20)
         saveImageDialog = Dialog(self.font, "Image added", [0, 200], [150, 32], ["green", "aqua"])
         saveImagesDialog = Dialog(self.font, "Images added", [0, 200], [150, 32], ["green", "aqua"])
-        saveSoundDialog = Dialog(self.font, "Image added", [0, 200], [150, 32], ["green", "aqua"])
+        saveSoundDialog = Dialog(self.font, "Sound added", [0, 200], [150, 32], ["green", "aqua"])
         while running:
             self.display.fill(self.bkg_color)
             scroll_control(scroll)
@@ -719,7 +719,7 @@ class LevelEditor:
         running = True
         scroll = [0, 0]
         asset = ""
-        section_dialog = Dialog(self.font, "", [200, 0], [200, 0], ["green", "aqua"])
+        section_dialog = Dialog(self.font, "Text", [0, 300], [200, 0], ["green", "aqua"])
         while running:
             self.display.fill(self.bkg_color)
             assets_tab.draw(self.display, scroll)
@@ -740,8 +740,8 @@ class LevelEditor:
                         case "physics":
                             self.level.physics.add(asset)
                             section_dialog.start_with_text(f"{asset_selec} added to {cat_selec}")
-                        case "ongrid":
-                            self.level.ongrid.add(asset)
+                        case "ongrid_decor":
+                            self.level.ongrid_decor.add(asset)
                             section_dialog.start_with_text(f"{asset_selec} added to {cat_selec}")
                         case "offgrid_decor":
                             self.level.offgrid_decor.add(asset)
@@ -749,6 +749,7 @@ class LevelEditor:
                         case "blocks":
                             self.level.blocks.add(asset)
                             section_dialog.start_with_text(f"{asset_selec} added to {cat_selec}")
+                    asset = ""
 
             scroll_control(scroll, 4)
             section_dialog.update(self.display)
@@ -767,9 +768,54 @@ class LevelEditor:
 
     def get_saved_assets(self):
         title_bar = TitleBar(self.font, self.display, "GET SAVED ASSETS")
-        typ = "assets"
+        PATH = "data/"
+        used_path = PATH
+        pressed = False
+        scroll = [0, 0]
+        timer = Timer(60, 1)
+        path_list = [PATH]
+        hist = PATH
+        timer.start()
+        name = "a"
+        tab = Custom_Table(self.font, [0, 32], [self.display.get_width(), 16], 1, 20)
+        saveAssetsDialog = Dialog(self.font, "Images added", [0, 200], [150, 32], ["green", "aqua"])
         running = True
         while running:
+            timer.update()
+            self.display.fill(self.bkg_color)
+            scroll_control(scroll)
+            tab.add_item(hist, [0, 0])
+            for i, folder in enumerate(os.listdir(used_path)):
+                tab.add_item(folder, [0, i+1])
+            tab.set_row_font_color(0, "red")
+            selec = tab.mouse_select(0, self.render_scale, scroll)
+            selec2 = tab.mouse_select(2, self.render_scale, scroll)
+            saveAssetsDialog.update(self.display)
+            if selec != "" and selec != "...":
+                if timer.done:
+                    used_path = used_path + "/" + selec
+                    hist = used_path
+                    path_list.append("/"+selec)
+                    tab.empty()
+                    timer.start()
+            if selec2 != "" and selec2 != "...":
+                if timer.done:
+                    ext = ["json"]
+                    temp = selec2.split(".")
+                    if len(temp) > 1:
+                        if temp[1] in ext:
+                            name = text_input2([self.display, self.screen], self.font, name, "Type of assets to import")
+                            if name == "o":
+                                get_game_assets(used_path + "/"+ selec2, self.other_assets)
+                                saveAssetsDialog.start_with_text(f"{selec2} other assets extracted")
+                            else:
+                                get_game_assets(used_path + "/"+ selec2, self.assets)
+                                saveAssetsDialog.start_with_text(f"{selec2} assets extracted")
+                                self.types = list(self.assets)
+                                self.loaded = True
+            tab.draw(self.display, scroll)
+            title_bar.update()
+            self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), [0, 0])
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -777,6 +823,17 @@ class LevelEditor:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         running = False
+                    if event.key == pygame.K_TAB:
+                        typ = text_input2([self.display, self.screen], self.font, typ, "Type of Assets to Load.")
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 2:
+                        if len(path_list) > 1:
+                            path_list.pop(-1)
+                            used_path = ""
+                            for part in path_list:
+                                used_path += part
+                                hist = used_path
+                        tab.empty()
             pygame.display.flip()
             self.clock.tick(60)
 
@@ -882,6 +939,8 @@ class LevelEditor:
                         self.get_other_assets()
                     if event.key == pygame.K_PAGEDOWN:
                         self.categorise_assets()
+                    if event.key == pygame.K_PAGEUP:
+                        self.get_saved_assets()
                     
                     
             pygame.display.update()

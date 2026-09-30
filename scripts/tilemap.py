@@ -12,12 +12,15 @@ class Tilemp:
         self.tilesize = tilesize
         self.tilemap = {}
         self.offgrid = []
-        self.ongrid = set()
+        self.ongrid = {}
+        self.ongrid_decor = set()
         self.physics = {}
         self.offgrid_decor = set()
         self.spawners = set()
         self.decor = set()
         self.layers = {}
+        self.fluid = set()
+        self.animated = set()
         self.current_layer = 0
         self.blocks = set()
         self.phys_blocks = {}
@@ -29,9 +32,26 @@ class Tilemp:
             check_pos = str(tile_pos[0] + offset[0]) + ";" + str(tile_pos[1] + offset[1])
             if check_pos in self.tilemap:
                 tile = self.tilemap[check_pos]
-                if tile["type"] in self.physics:
+                if tile["type"] in self.physics and not tile["type"] in self.spawners and not tile["type"] in self.fluid:
                     tiles.append(tile)
         return tiles
+
+    def pblocks_around(self, pos):
+            tiles = []
+            tile_pos = [int(pos[0] // self.tilesize[0]), int(pos[1] // self.tilesize[1])]
+            for offset in NEIGHBOR_OFFSETS:
+                check_pos = str(tile_pos[0] + offset[0]) + ";" + str(tile_pos[1] + offset[1])
+                if check_pos in self.phys_blocks:
+                    tile = self.phys_blocks[check_pos]
+                    if tile["type"] in self.blocks and not tile["type"] in self.spawners and not tile["type"] in self.fluid:
+                        tiles.append(tile)
+            return tiles
+
+    def phys_blocks_around(self, pos):
+        rects = []
+        for tile in self.pblocks_around(pos):
+            rects.append(pygame.Rect(tile["pos"][0] * self.tilesize[0], tile["pos"][1] * self.tilesize[1], self.tilesize[0], self.tilesize[1]))
+        return rects
     
     def physics_around(self, pos):
         rects = []
@@ -135,11 +155,17 @@ class Tilemp:
         self.tilemap = data["tilemap"]
         self.tilesize = data["tilesize"]
         if "physics" in data:
-            self.physics = data["physics"]
+            self.physics = set(data["physics"])
         if "ongrid" in data:
             self.ongrid = data["ongrid"]
         if "offgrid" in data:
             self.offgrid = data["offgrid"]
+        if "blocks" in data:
+            self.blocks = set(data["blocks"])
+        if "phys_blocks" in data:
+            self.phys_blocks = data["phys_blocks"]
+        if "spawners" in data:
+            self.spawners = set(data["spawners"])
         f.close()
 
     def load_custom_map(self, path):
@@ -148,11 +174,17 @@ class Tilemp:
             self.tilemap = data["tilemap"]
             self.tilesize = data["tilesize"]
             if "physics" in data:
-                self.physics = data["physics"]
+                self.physics = set(data["physics"])
             if "ongrid" in data:
                 self.ongrid = data["ongrid"]
             if "offgrid" in data:
                 self.offgrid = data["offgrid"]
+            if "blocks" in data:
+                self.blocks = set(data["blocks"])
+            if "phys_blocks" in data:
+                self.phys_blocks = data["phys_blocks"]
+            if "spawners" in data:
+                self.spawners = set(data["spawners"])
             f.close()
 
     def draw(self, surf, offset=[0, 0]):

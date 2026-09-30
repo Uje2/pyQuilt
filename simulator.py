@@ -4,7 +4,7 @@ import sys
 from scripts.particle import Particles, Demo, Spark, Trail, Shockwave, Trails, Sparks
 from scripts.tilemap import Anchors
 from scripts.widgets import Label, Slider, Button, RectedButton,TitleBar, Table, text_input, text_input2, Custom_Table, TextBox, VerticalSlider, Button2
-from scripts.utils import Timer, button_control2, mouse_scroll_silders, slider_handle, button_handle, label_handle, timer_handle, get_game_assets
+from scripts.utils import Timer, button_control2, mouse_scroll_silders, slider_handle, button_handle, label_handle, timer_handle, get_game_assets, give_ids
 from scripts.tilemap import Tilemp
 from scripts.entities import PhysicsEntity
 
@@ -22,11 +22,13 @@ class Simulator:
         self.anchor = self.anchors.head
         self.active = "None"
         self.level = Tilemp(self, [16, 16])
+        self.id = 0
         self.player = PhysicsEntity([50, 50])
-        get_game_assets("data/allied/steel_test.json", self.assets)
+        self.player2 = PhysicsEntity([100, 50])
+        self.players = [self.player, self.player2]
+        self.id = give_ids(self.players, self.id)
+        get_game_assets("data/allied/test_map.json", self.assets)
         self.level.assets = self.assets
-        print(self.level.assets)
-
     def anchor_tweaks(self):
         ...
 
@@ -73,16 +75,17 @@ class Simulator:
         count = 0
         title = TitleBar(self.font, self.display, "Simulator: Widget Testing")
         text = ""
-        self.level.load_custom_map("data/allied/steel_test.json")
+        self.level.load_custom_map("data/allied/test_map.json")
         self.level.layering()
         #self.level.physics = {"steel_mid_two", "steel_upper_two", "steel_back", "steel_upper_one"}
         scroll = [0, 0]
         while run:
-            scroll[0] += (self.player.pos[0] - self.display.get_width() / 2) - scroll[0]
-            scroll[1] += (self.player.pos[1] - self.display.get_height() / 2) - scroll[1]
+            scroll[0] += (self.player.get_collider().centerx - self.display.get_width() / 2) - scroll[0]
+            scroll[1] += (self.player.get_collider().centery- self.display.get_height() / 2) - scroll[1]
             r_scroll = [int(scroll[0]), int(scroll[1])]
             self.display.fill((20, 50, 90))
-            self.player.update(self.level.physics_around(self.player.pos), self.display, r_scroll)
+            self.player.update(self.level.phys_blocks_around(self.player.pos), self.display, r_scroll)
+            self.player2.update2(self.level.phys_blocks_around(self.player2.pos), self.display, r_scroll)
             self.level.draw(self.display, r_scroll)
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), [0, 0])
             for event in pygame.event.get():
@@ -93,6 +96,10 @@ class Simulator:
                         self.selector()
                     if event.key == pygame.K_KP_PLUS:
                         txt = text_input2([self.display, self.screen], self.font, text, "TEXT INPUT")
+                    if event.key == pygame.K_KP0:
+                        self.player.change_gravity_status()
+                    if event.key == pygame.K_KP0:
+                        self.player2.change_gravity_status()
 
             pygame.display.update()
             self.clock.tick(60)
