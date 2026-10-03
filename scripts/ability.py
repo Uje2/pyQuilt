@@ -24,10 +24,10 @@ class ShinraTensei:
         self.wave = RingWave(self.pos, square_size=60, lifetime=16, outer_thickness=8, inner_thickness=5)
         self.pushed = True
 
-    def update(self, players, surf, offset=[0, 0]):
+    def update(self, players):
         pushes = {"left": False, "right": False, "up": False, "down": False}
         if self.pushed:
-            self.wave.update(surf, offset=offset)
+            #self.wave.update(surf, offset=offset)
             #pygame.draw.rect(surf, self.color, [self.rect.x - offset[0], self.rect.y - offset[1], self.rect.w, self.rect.h], 2)
             if self.wave.dead:
                 self.pushed = False
@@ -76,7 +76,16 @@ class ShinraTensei:
                                     #player.velocity[1] = 3'''
                                 player.get_pushed(["vert", -3 if pushes["up"] else 3])
 
+    def draw(self, surf, offset=[0, 0]):
+        self.wave.update(surf, offset=offset)
+        #pygame.draw.rect(surf, self.color, [self.rect.x - offset[0], self.rect.y - offset[1], self.rect.w, self.rect.h], 2)
+
 
 class Turrent:
     def __init__(self):
-        ...
+        self.pos = [0, 0]
+        self.placed = False
+        self.color = "red"
+        self.rect = []
+        self.image = []
+        self.dead = False

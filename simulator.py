@@ -97,25 +97,27 @@ class Simulator:
             scroll2[0] += (self.player2.get_collider().centerx - display2.get_width() / 2) - scroll2[0]
             scroll2[1] += (self.player2.get_collider().centery- display2.get_height() / 2) - scroll2[1]
             l_scroll = [int(scroll2[0]), int(scroll2[1])]
-            for ability in self.abilities:
+            for ability in self.abilities[:]:
                 if ability[0] == self.player.id:
-                    ability[1].update([self.player2], display, r_scroll)
-                    ability[1].update([self.player2], display2, l_scroll)
+                    ability[1].update([self.player2])
                 if ability[0] == self.player2.id:
-                    ability[1].update([self.player], display, r_scroll)
-                    ability[1].update([self.player], display2, l_scroll)
+                    ability[1].update([self.player])
                 if ability[1].dead:
                     self.abilities.remove(ability)
+                ability[1].draw(display, r_scroll)
+                ability[1].draw(display2, l_scroll)
             ## player 1
             
-            self.player.update(self.level.physics_around(self.player.pos), display, r_scroll)
-            self.player2.update2(self.level.physics_around(self.player2.pos), display, r_scroll)
+            self.player.no_display_update(self.level.physics_around(self.player.pos))
+            self.player2.no_display_update(self.level.physics_around(self.player2.pos))
+            self.player.draw_collider(display, r_scroll)
+            self.player2.draw_collider(display, r_scroll)
             self.level.draw(display, r_scroll)
             
             ## player 2
             
-            self.player.update(self.level.physics_around(self.player.pos), display2, l_scroll)
-            self.player2.update2(self.level.physics_around(self.player2.pos), display2, l_scroll)
+            self.player2.draw_collider(display2, l_scroll)
+            self.player.draw_collider(display2, l_scroll)
             self.level.draw(display2, l_scroll)
 
             self.screen.blit(pygame.transform.scale(display, main_dimensions), [0, 0])

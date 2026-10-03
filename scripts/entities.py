@@ -208,6 +208,14 @@ class PhysicsEntity:
         self.move(movement=self.direction, colliders=colliders)
         self.draw_collider(surf, offset=offset)
 
+    def no_display_update(self, colliders):
+        if self.pid == 1:
+            self.get_wasd_input()
+            self.move(movement=self.direction, colliders=colliders)
+        elif self.pid == 2:
+            self.get_arrow_input()
+            self.move(movement=self.direction, colliders=colliders)
+
     def update2(self, colliders, surf, offset=[0, 0]):
         self.get_arrow_input()
         self.move(movement=self.direction, colliders=colliders)
