@@ -31,7 +31,8 @@ class PhysicsEntity:
         self.ability = self.get_ability()
         self.count = 0
         self.count2 = 0
-        self.pushed = True
+        self.pushed = False
+        self.push_value = 0
 
     def get_collider(self):
         if not self.rotated:
@@ -70,6 +71,16 @@ class PhysicsEntity:
                 elif self.rotate_request == "hor":
                     self.rotated = False
 
+    def get_pushed(self, push):
+        #push format = [dir, value]
+        self.push_value = push[1]
+        if push[0] == "hor":
+            self.velocity[0] = self.push_value
+        else:
+            self.velocity[1] = self.push_value
+        self.pushed = True
+
+
     def move(self, movement, colliders):
         self.collisions = {"top": False, "bottom": False, "left": False, "right": False}
         frame_movement = (movement[0] + self.velocity[0], movement[1] + self.velocity[1])
@@ -84,6 +95,8 @@ class PhysicsEntity:
                     entity_rect.top = collider.bottom
                     self.collisions["top"] = True
                 self.pos[1] = entity_rect.y
+                if self.pushed:
+                    self.velocity[1] *= -1
         
         self.pos[0] += frame_movement[0]
         entity_rect = self.get_collider()
@@ -96,22 +109,24 @@ class PhysicsEntity:
                     entity_rect.left = collider.right
                     self.collisions["left"] = True
                 self.pos[0] = entity_rect.x
+                if self.pushed:
+                    self.velocity[0] *= -1
 
         self.rotate_rect(colliders)
-        if self.count > 5 and self.pushed:
-            hor_push = True
-        if self.count2 > 5 and self.pushed:
-            vert_push = True
+
+        # push mechanisms
         if self.velocity[0] != 0:
             self.count += 1
         if self.count >= 25:
             self.velocity[0] = 0
             self.count = 0
+            self.pushed = False
         if self.velocity[1] == -3 or self.velocity[1] == 3:
             self.count2 += 1
         if self.count2 >= 25:
             self.velocity[1] = 0
             self.count2 = 0
+            self.pushed = False
 
         
         if self.has_gravity:

@@ -56,23 +56,25 @@ class ShinraTensei:
                         if hor and vert:
                             dist = dists(rect.center, p_rect.center)
                             if dist[0] >= dist[1]:
-                                if pushes["left"]:
-                                    p_rect.right = rect.left 
-                                    player.pos[0] = p_rect.x
+                                '''if pushes["left"]:
+                                    #p_rect.right = rect.left 
+                                    #player.pos[0] = p_rect.x
                                     player.velocity[0] = -3
                                 else:
-                                    p_rect.left = rect.right
-                                    player.pos[0] = p_rect.x
-                                    player.velocity[0] = 3
+                                    #p_rect.left = rect.right
+                                    #player.pos[0] = p_rect.x
+                                    player.velocity[0] = 3'''
+                                player.get_pushed(["hor", -3 if pushes["left"] else 3])
                             else:
-                                if pushes["up"]:
-                                    p_rect.bottom = rect.top
-                                    player.pos[1] = p_rect.y
+                                '''if pushes["up"]:
+                                    #p_rect.bottom = rect.top
+                                    #player.pos[1] = p_rect.y
                                     player.velocity[1] = -3
                                 else:
-                                    p_rect.top = rect.bottom
-                                    player.pos[1] = p_rect.y
-                                    player.velocity[1] = 3
+                                    #p_rect.top = rect.bottom
+                                    #player.pos[1] = p_rect.y
+                                    #player.velocity[1] = 3'''
+                                player.get_pushed(["vert", -3 if pushes["up"] else 3])
 
 
 class Turrent:
