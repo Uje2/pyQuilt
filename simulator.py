@@ -23,12 +23,13 @@ class Simulator:
         self.active = "None"
         self.level = Tilemp(self, [16, 16])
         self.id = 0
-        self.player = PhysicsEntity([50, 50])
-        self.player2 = PhysicsEntity([100, 50])
+        self.player = PhysicsEntity(self, [50, 50], pid=1)
+        self.player2 = PhysicsEntity(self, [100, 50], pid=2)
         self.players = [self.player, self.player2]
         self.id = give_ids(self.players, self.id)
-        get_game_assets("data/allied/test_map.json", self.assets)
+        get_game_assets("data/allied/steel_test.json", self.assets)
         self.level.assets = self.assets
+        self.abilities = []
     def anchor_tweaks(self):
         ...
 
@@ -70,6 +71,73 @@ class Simulator:
             self.clock.tick(60)
 
     
+    def split_screen_run(self):
+        run = True
+        count = 0
+        renderscale = 2
+        #self.screen = pygame.display.set_mode((960, 720))
+        main_dimensions = [int(self.screen.get_width() // 2), self.screen.get_height()]
+        title = TitleBar(self.font, self.display, "Simulator: Widget Testing")
+        display = pygame.Surface((int(self.screen.get_width() // int(renderscale)), int(self.screen.get_height())))
+        #display = pygame.Surface((int(main_dimensions[0] // renderscale), int(main_dimensions[1] // renderscale)))
+        #display2 = pygame.Surface((int(main_dimensions[0] // renderscale), int(main_dimensions[1] // renderscale)))
+        display2 = pygame.Surface((int(self.screen.get_width() // int(renderscale)), int(self.screen.get_height())))
+        text = ""
+        self.level.load_custom_map("data/allied/steel_test.json")
+        self.level.layering()
+        #self.level.physics = {"steel_mid_two", "steel_upper_two", "steel_back", "steel_upper_one"}
+        scroll = [0, 0]
+        scroll2 = [0, 0]
+        while run:
+            display.fill((20, 50, 90))
+            display2.fill((20, 50, 90))
+            scroll[0] += (self.player.get_collider().centerx - display.get_width() / 2) - scroll[0]
+            scroll[1] += (self.player.get_collider().centery- display.get_height() / 2) - scroll[1]
+            r_scroll = [int(scroll[0]), int(scroll[1])]
+            scroll2[0] += (self.player2.get_collider().centerx - display2.get_width() / 2) - scroll2[0]
+            scroll2[1] += (self.player2.get_collider().centery- display2.get_height() / 2) - scroll2[1]
+            l_scroll = [int(scroll2[0]), int(scroll2[1])]
+            for ability in self.abilities:
+                if ability[0] == self.player.id:
+                    ability[1].update([self.player2], display, r_scroll)
+                    ability[1].update([self.player2], display2, l_scroll)
+                if ability[0] == self.player2.id:
+                    ability[1].update([self.player], display, r_scroll)
+                    ability[1].update([self.player], display2, l_scroll)
+                if ability[1].dead:
+                    self.abilities.remove(ability)
+            ## player 1
+            
+            self.player.update(self.level.physics_around(self.player.pos), display, r_scroll)
+            self.player2.update2(self.level.physics_around(self.player2.pos), display, r_scroll)
+            self.level.draw(display, r_scroll)
+            
+            ## player 2
+            
+            self.player.update(self.level.physics_around(self.player.pos), display2, l_scroll)
+            self.player2.update2(self.level.physics_around(self.player2.pos), display2, l_scroll)
+            self.level.draw(display2, l_scroll)
+
+            self.screen.blit(pygame.transform.scale(display, main_dimensions), [0, 0])
+            self.screen.blit(pygame.transform.scale(display2, main_dimensions), [int(self.screen.get_width() // 2), 0])
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    run = False
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_KP_ENTER:
+                        self.selector()
+                    if event.key == pygame.K_KP_PLUS:
+                        txt = text_input2([self.display, self.screen], self.font, text, "TEXT INPUT")
+                    if event.key == pygame.K_KP0:
+                        self.player.change_gravity_status()
+                    if event.key == pygame.K_KP0:
+                        self.player2.change_gravity_status()
+
+            pygame.display.update()
+            self.clock.tick(60)
+        pygame.quit()
+
     def run(self):
         run = True
         count = 0
@@ -104,6 +172,7 @@ class Simulator:
             pygame.display.update()
             self.clock.tick(60)
         pygame.quit()
+    
 
 '''def mouse_scroll(slider):
     mp = pygame.mouse.get_pressed()
@@ -164,4 +233,4 @@ def btn_control(btn: Button, offset=[0, 0]):
                 btn.set_state()
                 timer.start()
     
-Simulator().run()
+Simulator().split_screen_run()

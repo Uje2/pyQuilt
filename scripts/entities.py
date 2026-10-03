@@ -1,10 +1,13 @@
 import pygame
+from scripts.utils import load_image
+from scripts.ability import ShinraTensei
 
 GRAVITY = 0.2
 jump_height = -3
+image_path = "data/images/other/mine/01.png"
 
 class PhysicsEntity:
-    def __init__(self, origin, size=[8, 15], offset=[0, 0]):
+    def __init__(self, game, origin, size=[8, 15], offset=[0, 0], pid=3):
         self.pos = list(origin)
         self.size = list(size)
         self.direction = [0, 0]
@@ -19,20 +22,40 @@ class PhysicsEntity:
         self.rotate_request = "vert"
         self.current_rot = "vert"
         self.crouch = False
+        #self.image = load_image(image_path)
+        self.type = "force"
         self.id = 0
+        self.health = 100
+        self.pid = pid
+        self.game = game
+        self.ability = self.get_ability()
+        self.count = 0
+        self.count2 = 0
+        self.pushed = True
 
     def get_collider(self):
         if not self.rotated:
             return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
         else:
             return pygame.Rect(self.pos[0], self.pos[1], self.size[1], self.size[0])
+
+    def get_ability(self):
+        if self.type == "force":
+            return ShinraTensei().copy()
+
+    def activate_ability(self):
+        if self.type == "force":
+            ab = self.ability.copy()
+            ab.push(self.get_collider().center)
+            return [self.id, ab]
     
     def draw_collider(self, surf, offset=[0, 0], color="green"):
         temp = self.get_collider()
         rect = pygame.Rect(temp.x - self.offset[0] - offset[0], temp.y - self.offset[1] - offset[1], temp.w, temp.h)
-        pygame.draw.rect(self.image, color, rect)
+        #pygame.draw.rect(self.image, color, rect)
         pygame.draw.rect(surf, color, rect)
         #pygame.draw.rect(self.image, color, temp)
+        #surf.blit(self.image, rect)
 
     def rotate_rect(self, colliders):
         if self.rotate_request == "vert":
@@ -75,6 +98,20 @@ class PhysicsEntity:
                 self.pos[0] = entity_rect.x
 
         self.rotate_rect(colliders)
+        if self.count > 5 and self.pushed:
+            hor_push = True
+        if self.count2 > 5 and self.pushed:
+            vert_push = True
+        if self.velocity[0] != 0:
+            self.count += 1
+        if self.count >= 25:
+            self.velocity[0] = 0
+            self.count = 0
+        if self.velocity[1] == -3 or self.velocity[1] == 3:
+            self.count2 += 1
+        if self.count2 >= 25:
+            self.velocity[1] = 0
+            self.count2 = 0
 
         
         if self.has_gravity:
@@ -111,6 +148,8 @@ class PhysicsEntity:
                 self.direction[1] = 1
             else:
                 self.direction[1] = 0
+        if keys[pygame.K_g]:
+            self.game.abilities.append(self.activate_ability())
             
     def get_arrow_input(self):
         self.crouch = False
@@ -140,8 +179,16 @@ class PhysicsEntity:
                 self.direction[1] = 1
             else:
                 self.direction[1] = 0
+        if keys[pygame.K_k]:
+            self.game.abilities.append(self.activate_ability())
 
     def update(self, colliders, surf, offset=[0, 0]):
+        if self.pid == 1:
+            self.update1(colliders, surf, offset)
+        elif self.pid == 2:
+            self.update2(colliders, surf, offset)
+
+    def update1(self, colliders, surf, offset=[0, 0]):
         self.get_wasd_input()
         self.move(movement=self.direction, colliders=colliders)
         self.draw_collider(surf, offset=offset)
@@ -155,3 +202,6 @@ class PhysicsEntity:
         self.has_gravity = not self.has_gravity
         self.rotate_request = "vert"
         self.velocity[1] = 0
+
+    def get_damage(self, damage):
+        self.health -= damage

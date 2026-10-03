@@ -139,16 +139,17 @@ class Trails:
             trail.update(surf, offset)
 
 class Shockwave:
-    def __init__(self, pos, size=2, width=5, color="magenta"):
+    def __init__(self, pos, size=2, width=5, color="magenta", speed=0.1):
         self.pos = list(pos)
         self.size = size
         self.width = width
         self.color = color
         self.dead = False
+        self.speed = speed
 
     def wave(self):
         self.size += 1
-        self.width = max(self.width - 0.1, 1)
+        self.width = max(self.width - self.speed, 1)
         if self.width <= 1:
             self.dead = True
 
@@ -219,4 +220,75 @@ class Anchor:
             print(f"{self.anchor.pos}, myp: {self.pos}")
             pygame.draw.line(surf, "red", self.anchor.pos, self.pos)
             #pygame.draw.line(surf, "blue", self.anchor.pos[1], self.pos[1])
+
+class RingWave:
+    """
+    Two concentric rings that grow and die together, sized so that:
+      - the OUTER ring starts at the center and ends at the
+        circumscribed radius of a `square_size` square  (S / sqrt(2))
+      - the INNER ring starts at the inscribed radius (S / 2) and ends
+        at the same circumscribed radius
+    Net effect: any point inside the square is already visually inside
+    the inner ring at t=0, so a rect-based hit never looks like it
+    came out of nowhere, and both rings finish exactly on the corners.
+    """
+
+    _INV_SQRT2 = 0.7071067811865476
+
+    def __init__(self, pos, square_size,
+                 outer_color="aqua", inner_color="white",
+                 lifetime=16, outer_thickness=8, inner_thickness=5):
+        self.pos = list(pos)
+        self.square_size = float(square_size)
+        self.lifetime = max(1, int(lifetime))
+        self.age = 0
+        self.dead = False
+
+        # --- the geometry -------------------------------------------------
+        self.r_final       = self.square_size * self._INV_SQRT2   # ≈ 0.7071 * S
+        self.r_start_inner = self.square_size * 0.5               # = 0.5000 * S
+        self.r_start_outer = 0.0
+        # ------------------------------------------------------------------
+
+        self.outer_color     = outer_color
+        self.inner_color     = inner_color
+        self.outer_thickness = float(outer_thickness)
+        self.inner_thickness = float(inner_thickness)
+
+        # legacy attrs so any code reading .size / .width still works
+        self.size  = 0
+        self.width = int(self.outer_thickness)
+
+    # --- shape at the current age ----------------------------------------
+    def _t(self):
+        return min(self.age / self.lifetime, 1.0)
+
+    def _outer_radius(self):
+        return self.r_start_outer + (self.r_final - self.r_start_outer) * self._t()
+
+    def _inner_radius(self):
+        return self.r_start_inner + (self.r_final - self.r_start_inner) * self._t()
+
+    def _stroke(self, base):
+        return max(1, int(round(base * (1.0 - self._t()))))
+
+    # --- Shockwave-compatible API ----------------------------------------
+    def draw(self, surf, offset=[0, 0]):
+        cx = int(self.pos[0] - offset[0])
+        cy = int(self.pos[1] - offset[1])
+        # inner ring first so the brighter one sits on top
+        pygame.draw.circle(surf, self.inner_color, (cx, cy),
+                           int(self._inner_radius()),
+                           self._stroke(self.inner_thickness))
+        pygame.draw.circle(surf, self.outer_color, (cx, cy),
+                           int(self._outer_radius()),
+                           self._stroke(self.outer_thickness))
+
+    def update(self, surf, offset=[0, 0]):
+        self.draw(surf, offset=offset)
+        self.age += 1
+        self.size  = int(self._outer_radius())
+        self.width = self._stroke(self.outer_thickness)
+        if self.age > self.lifetime:
+            self.dead = True
 

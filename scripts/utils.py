@@ -348,3 +348,7 @@ def make_dummy_dict(list1, save_list):
             temp["dummies"] = []
         save_list.append(temp)
     return save_list
+
+
+def dists(point1, point2):
+    return [abs(point1[0] - point2[0]), abs(point1[1] - point2[1])]

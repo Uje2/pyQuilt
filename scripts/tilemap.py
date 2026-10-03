@@ -191,8 +191,8 @@ class Tilemp:
         #print(f"{self.layers} is layers")
         #print(f"{self.tilemap} is tilemap")
         if self.layers:
-            for x in range(int(offset[0] // self.tilesize[0]), int((offset[0]+surf.get_width()) // self.tilesize[0])):
-                for y in range(int(offset[1] // self.tilesize[1]), int((offset[1]+surf.get_height()) // self.tilesize[1])):
+            for x in range(int(offset[0] // self.tilesize[0]), int((offset[0]+surf.get_width()+self.tilesize[0]) // self.tilesize[0])):
+                for y in range(int(offset[1] // self.tilesize[1]), int((offset[1]+surf.get_height()+self.tilesize[1]) // self.tilesize[1])):
                     loc = str(x) + ";" + str(y)
                     if loc in self.layers["tile"][0]:
                         tile = self.tilemap[loc]
@@ -208,8 +208,8 @@ class Tilemp:
                         img.set_alpha(50 if self.current_layer != 0 else 255)
                         surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
                         #surf.blit(img, [tile["pos"][0] * tile["size"][0] - offset[0], tile["pos"][1] * tile["size"][1] - offset[1]])
-            for x in range(int(offset[0] // self.tilesize[0]), int((offset[0]+surf.get_width()) // self.tilesize[0])):
-                for y in range(int(offset[1] // self.tilesize[1]), int((offset[1]+surf.get_height()) // self.tilesize[1])):
+            for x in range(int(offset[0] // self.tilesize[0]), int((offset[0]+surf.get_width()+self.tilesize[0]) // self.tilesize[0])):
+                for y in range(int(offset[1] // self.tilesize[1]), int((offset[1]+surf.get_height()+self.tilesize[1]) // self.tilesize[1])):
                     loc = str(x) + ";" + str(y)
                     if loc in self.layers["tile"][1]:
                         tile = self.tilemap[loc]
@@ -222,8 +222,8 @@ class Tilemp:
                         pygame.draw.rect(img, tile["type"], [0, 0, self.tilesize[0], self.tilesize[1]], 0 if tile["variant"] == 0 else 2)
                         img.set_alpha(50 if self.current_layer != 1 else 255)
                         surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
-            for x in range(int(offset[0] // self.tilesize[0]), int((offset[0]+surf.get_width()) // self.tilesize[0])):
-                for y in range(int(offset[1] // self.tilesize[1]), int((offset[1]+surf.get_height()) // self.tilesize[1])):
+            for x in range(int(offset[0] // self.tilesize[0]), int((offset[0]+surf.get_width()+self.tilesize[0]) // self.tilesize[0])):
+                for y in range(int(offset[1] // self.tilesize[1]), int((offset[1]+surf.get_height()+self.tilesize[1]) // self.tilesize[1])):
                     loc = str(x) + ";" + str(y)
                     if loc in self.layers["tile"][2]:
                         tile = self.tilemap[loc]
@@ -246,8 +246,8 @@ class Tilemp:
                     '''
     def draw_layer(self, surf, layer, offset=[0, 0]):
         if self.layers:
-            for x in range(int(offset[0] // self.tilesize[0]), int((offset[0]+surf.get_width()) // self.tilesize[0])):
-                for y in range(int(offset[1] // self.tilesize[1]), int((offset[1]+surf.get_height()) // self.tilesize[1])):
+            for x in range(int(offset[0] // self.tilesize[0]), int((offset[0]+surf.get_width() + self.tilesize[0]) // self.tilesize[0])):
+                for y in range(int(offset[1] // self.tilesize[1]), int((offset[1]+surf.get_height() + self.tilesize[1]) // self.tilesize[1])):
                     loc = str(x) + ";" + str(y)
                     if loc in self.layers["tile"][layer]:
                         tile = self.tilemap[loc]
