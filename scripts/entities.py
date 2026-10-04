@@ -32,8 +32,37 @@ class PhysicsEntity:
         self.count = 0
         self.count2 = 0
         self.pushed = False
+        self.params = {"origin": origin, "size": size, "offset": offset}
         self.push_value = 0
 
+    def serialize(self):
+        return {
+            "size": self.size,
+            "offset": self.offset,
+            "ability": self.ability.serialize(),
+            "pid": self.pid,
+            "health": self.health,
+            "type": self.type,
+            "jumper": self.jumper,
+            "crouch": self.crouch,
+            "gravity": self.gravity,
+            "jump_height": jump_height,
+            "image_path": image_path,
+            "pos": self.pos,
+            "params": self.params
+        }
+
+    def deserialize(self, serial):
+        self.size = serial["size"]
+        self.offset = serial["offset"]
+        self.pid = serial["pid"]
+        self.health = serial["health"]
+        self.type = serial["type"]
+        self.jumper = serial["jumper"]
+        self.crouch = serial["crouch"]
+        self.gravity = serial["gravity"]
+        self.pos = serial["pos"]
+        
     def get_collider(self):
         if not self.rotated:
             return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
@@ -228,3 +257,5 @@ class PhysicsEntity:
 
     def get_damage(self, damage):
         self.health -= damage
+
+    

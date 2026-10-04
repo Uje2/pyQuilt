@@ -12,6 +12,13 @@ class ShinraTensei:
         self.img = pygame.Surface(self.max)
         self.pushed = False
         self.dead = False
+        self.params = {"max": max}
+
+    def serialize(self):
+        return {
+            "name": "ShinraTensei",
+            "params": self.params
+        }
 
     def copy(self):
         return ShinraTensei(max=self.max)

@@ -24,6 +24,7 @@ class Tilemp:
         self.current_layer = 0
         self.blocks = set()
         self.phys_blocks = {}
+        self.spawn_blocks = {}
     
     def tiles_around(self, pos):
         tiles = []

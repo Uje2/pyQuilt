@@ -1,0 +1,16 @@
+{
+    "resolution": [640, 480],
+    "renderscale": 2,
+    "assets": "data/allied/q.json",
+    "players":  [
+        {
+            "type": "force",
+            "health": 100,
+            "size": [8, 15],
+            "offset": [0, 0],
+            "jumper": true,
+            "crouch": false,
+            "jump_height": -3
+    }
+]
+}

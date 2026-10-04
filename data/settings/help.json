@@ -1,0 +1,38 @@
+{
+  "image_extractor_menu": {
+    "single select: ": "left click",
+    "multi select start: ": "right click",
+    "multi select end": "right click",
+    "process multi selected tiles into list": "x",
+    "finalise selection into tile variants: ": "s",
+    "showcase selection: ": "c",
+    "name variants (in showcase): ": "q",
+    "add to physics (in showcase and named): ": "f1",
+    "save variant in assets (in showcase and named): ": "Enter"
+  },
+  "draw_menu": {
+    "insert tile: ": "leftclick",
+    "remove tile: ": "right click",
+    "change tile: ": ", and .",
+    "change variant: ": "; and '",
+    "change layer: ": "[ and ]",
+    "select tile": "numpad 0",
+    "create solid color block": "numpad * (asterisc)",
+    "settings menu: ": "numpad 1",
+    "save asset details: ": "escape",
+    "load assets menu: ": "numpad enter",
+    "load non spritesheet assets: ": "/",
+    "categorise assets": "pagedown",
+    "load saved assets": "page up"
+  },
+  "load_asset_menu": {
+    "image extractor menu": "e",
+    "exit menu: ": "escape"
+  },
+  "exiting_menus": {
+    "exit: ": "escape"
+  },
+  "Toggle typing insupported menus": {
+    "where text input is required": "q"
+  }
+}

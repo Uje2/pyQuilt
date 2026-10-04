@@ -7,16 +7,20 @@ from scripts.widgets import Label, Slider, Button, RectedButton,TitleBar, Table,
 from scripts.utils import Timer, button_control2, mouse_scroll_silders, slider_handle, button_handle, label_handle, timer_handle, get_game_assets, give_ids
 from scripts.tilemap import Tilemp
 from scripts.entities import PhysicsEntity
+import json
 
 class Simulator:
     def __init__(self):
         pygame.init()
         self.renderscale = 2
-        self.screen = pygame.display.set_mode((640, 480))
+        self.resolution = (640, 480)
+        self.screen = pygame.display.set_mode(self.resolution)
         self.display = pygame.Surface((int(self.screen.get_width() // self.renderscale), int(self.screen.get_height() // self.renderscale)))
         self.clock = pygame.time.Clock()
+        self.name = "Simulation"
         self.assets = {}
         self.particles = []
+        self.path_to_font = "data/fonts/at01.ttf"
         self.font = pygame.font.Font("data/fonts/at01.ttf")
         self.anchors = Anchors([50, 50], [15, 15, 15, 20, 20, 20, 20, 10, 10, 8, 5, 5, 5])
         self.anchor = self.anchors.head
@@ -27,11 +31,30 @@ class Simulator:
         self.player2 = PhysicsEntity(self, [100, 50], pid=2)
         self.players = [self.player, self.player2]
         self.id = give_ids(self.players, self.id)
-        get_game_assets("data/allied/steel_test.json", self.assets)
+        self.path_to_assets = "data/allied/steel_test.json"
+        get_game_assets(self.path_to_assets, self.assets)
+        self.path_to_tilemap = ["data/allied/steel_test.json"]
         self.level.assets = self.assets
+        self.split_screen = True
+        self.entities = []
         self.abilities = []
+
+    
     def anchor_tweaks(self):
         ...
+
+    def serialize(self):
+        return {
+            "name": self.name,
+            "resolution": self.resolution,
+            "renderscale": self.renderscale,
+            "assets": self.path_to_assets,
+            "font": self.path_to_font,
+            "level": self.path_to_tilemap,
+            "players": [player.serialize() for player in self.players],
+            "split": self.split_screen,
+            "entities": self.entities
+        }
 
     def anchor_manage(self):
         mclick = pygame.mouse.get_pressed()
@@ -78,6 +101,7 @@ class Simulator:
         #self.screen = pygame.display.set_mode((960, 720))
         main_dimensions = [int(self.screen.get_width() // 2), self.screen.get_height()]
         title = TitleBar(self.font, self.display, "Simulator: Widget Testing")
+        displays = []
         display = pygame.Surface((int(self.screen.get_width() // int(renderscale)), int(self.screen.get_height())))
         #display = pygame.Surface((int(main_dimensions[0] // renderscale), int(main_dimensions[1] // renderscale)))
         #display2 = pygame.Surface((int(main_dimensions[0] // renderscale), int(main_dimensions[1] // renderscale)))
@@ -135,10 +159,20 @@ class Simulator:
                         self.player.change_gravity_status()
                     if event.key == pygame.K_KP0:
                         self.player2.change_gravity_status()
+                    if event.key == pygame.K_TAB:
+                        self.save_serial_config()
 
             pygame.display.update()
             self.clock.tick(60)
         pygame.quit()
+
+    def save_serial_config(self):
+        path = "data/game-configs/"
+        name = "Test1"
+        f = open(path + name + ".json", "w")
+        data = self.serialize()
+        json.dump(data, f)
+        f.close()
 
     def run(self):
         run = True
@@ -168,8 +202,9 @@ class Simulator:
                         txt = text_input2([self.display, self.screen], self.font, text, "TEXT INPUT")
                     if event.key == pygame.K_KP0:
                         self.player.change_gravity_status()
-                    if event.key == pygame.K_KP0:
                         self.player2.change_gravity_status()
+                    if event.key == pygame.K_TAB:
+                        self.save_serial_config()
 
             pygame.display.update()
             self.clock.tick(60)
