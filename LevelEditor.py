@@ -24,6 +24,8 @@ class LevelEditor:
         self.loaded = False
         self.image = None
         self.tilesize = [16, 16]
+        self.max_layers = 3
+        self.layered = True
         self.types = []
         self.type_index = 0
         self.type = self.types[self.type_index] if self.loaded else []
@@ -32,7 +34,7 @@ class LevelEditor:
         self.level = Tilemp(self, self.tilesize)
         self.level.physics = {"grass", "sand"}
         self.path = ""
-        self.current_layer = 0
+        self.current_layer = 1
         self.used = []
         self.bkg_color = (0, 10, 30)
         self.other_assets = {}
@@ -884,34 +886,58 @@ class LevelEditor:
                 self.scroll[0] += 4
             if self.loaded:
                 mclick = pygame.mouse.get_pressed()
-                if mclick[0]:
-                    mpos = pygame.mouse.get_pos()
-                    tile_pos = [mpos[0] // self.render_scale, mpos[1] // self.render_scale]
-                    tile_pos = [int((tile_pos[0] + self.scroll[0]) // self.tilesize[0]), int((tile_pos[1] + self.scroll[1]) // self.tilesize[1])]
-                    if self.type in self.level.physics:
-                        self.level.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {"type": self.type, "variant": self.current_index, "pos":tile_pos, "layer": self.current_layer}
-                        self.level.layering()
-                    if self.type in self.level.blocks:
-                        self.level.phys_blocks[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {"type": self.type, "variant": self.current_index, "pos":tile_pos, "layer": self.current_layer}
-                        self.level.layering()
-                    if self.type in self.level.spawners:
-                        self.level.spawn_blocks[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {"type": self.type, "variant": self.current_index, "pos":tile_pos, "team": "", "id": sIdCounter, "limit": 4, "limited": True, "layer": self.current_layer}
-                        sIdCounter += 1
-                elif mclick[2]:
-                    mpos = pygame.mouse.get_pos()
-                    tile_pos = [mpos[0] // self.render_scale, mpos[1] // self.render_scale]
-                    tile_pos = [int((tile_pos[0] + self.scroll[0]) // self.tilesize[0]), int((tile_pos[1] + self.scroll[1]) // self.tilesize[1])]
-                    check = str(tile_pos[0]) + ";" + str(tile_pos[1])
-                    if check in self.level.tilemap:
-                        del self.level.tilemap[check]
-                        self.level.layering()
-                    if check in self.level.phys_blocks:
-                        del self.level.phys_blocks[check]
-                        self.level.layering()
-                    if check in self.level.spawn_blocks:
-                        del self.level.spawn_blocks[check]
+                if self.layered:
+                    layer_check = "layer" + str(self.current_layer)
+                    if mclick[0]:
+                        mpos = pygame.mouse.get_pos()
+                        tile_pos = [mpos[0] // self.render_scale, mpos[1] // self.render_scale]
+                        tile_pos = [int((tile_pos[0] + self.scroll[0]) // self.tilesize[0]), int((tile_pos[1] + self.scroll[1]) // self.tilesize[1])]
+                        if self.type in self.level.physics:
+                            self.level.tilemap[layer_check][str(tile_pos[0]) + ";" + str(tile_pos[1])] = {"type": self.type, "variant": self.current_index, "pos":tile_pos, "layer": self.current_layer}
+                        if self.type in self.level.blocks:
+                            self.level.phys_blocks[layer_check][str(tile_pos[0]) + ";" + str(tile_pos[1])] = {"type": self.type, "variant": self.current_index, "pos":tile_pos, "layer": self.current_layer}
+                        if self.type in self.level.spawners:
+                            self.level.spawn_blocks[layer_check][str(tile_pos[0]) + ";" + str(tile_pos[1])] = {"type": self.type, "variant": self.current_index, "pos":tile_pos, "team": "", "id": sIdCounter, "limit": 4, "limited": True, "layer": self.current_layer}
+                            sIdCounter += 1
+                    elif mclick[2]:
+                        layer_rep = "layer" + str(self.current_layer)
+                        mpos = pygame.mouse.get_pos()
+                        tile_pos = [mpos[0] // self.render_scale, mpos[1] // self.render_scale]
+                        tile_pos = [int((tile_pos[0] + self.scroll[0]) // self.tilesize[0]), int((tile_pos[1] + self.scroll[1]) // self.tilesize[1])]
+                        check = str(tile_pos[0]) + ";" + str(tile_pos[1])
+                        if check in self.level.tilemap[layer_check]:
+                            del self.level.tilemap[layer_check][check]
+                        if check in self.level.phys_blocks[layer_check]:
+                            del self.level.phys_blocks[layer_check][check]
+                        if check in self.level.spawn_blocks[layer_check]:
+                            del self.level.spawn_blocks[layer_check][check]
+                else:
+                    if mclick[0]:
+                        mpos = pygame.mouse.get_pos()
+                        tile_pos = [mpos[0] // self.render_scale, mpos[1] // self.render_scale]
+                        tile_pos = [int((tile_pos[0] + self.scroll[0]) // self.tilesize[0]), int((tile_pos[1] + self.scroll[1]) // self.tilesize[1])]
+                        if self.type in self.level.physics:
+                            self.level.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {"type": self.type, "variant": self.current_index, "pos":tile_pos, "layer": self.current_layer}
+                        if self.type in self.level.blocks:
+                            self.level.phys_blocks[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {"type": self.type, "variant": self.current_index, "pos":tile_pos, "layer": self.current_layer}
+                        if self.type in self.level.spawners:
+                            self.level.spawn_blocks[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {"type": self.type, "variant": self.current_index, "pos":tile_pos, "team": "", "id": sIdCounter, "limit": 4, "limited": True, "layer": self.current_layer}
+                            sIdCounter += 1
+                    elif mclick[2]:
+                        layer_rep = "layer" + str(self.current_layer)
+                        mpos = pygame.mouse.get_pos()
+                        tile_pos = [mpos[0] // self.render_scale, mpos[1] // self.render_scale]
+                        tile_pos = [int((tile_pos[0] + self.scroll[0]) // self.tilesize[0]), int((tile_pos[1] + self.scroll[1]) // self.tilesize[1])]
+                        check = str(tile_pos[0]) + ";" + str(tile_pos[1])
+                        if check in self.level.tilemap:
+                            del self.level.tilemap[check]
+                        if check in self.level.phys_blocks:
+                            del self.level.phys_blocks[check]
+                        if check in self.level.spawn_blocks:
+                            del self.level.spawn_blocks[check]
+
             
-            self.level.draw(self.display, self.scroll)
+            self.level.draw_layers(self.display, self.scroll)
             if self.current:
                 if not self.current[self.current_index] in self.level.blocks:
                     img = self.current[self.current_index]
@@ -936,10 +962,10 @@ class LevelEditor:
                             if self.current:
                                 self.current_index = (self.current_index - 1) % len(self.current)    
                     if event.key == pygame.K_LEFTBRACKET:
-                        self.current_layer = (self.current_layer + 1) % 3   
+                        self.current_layer = (self.current_layer + 1) % self.max_layers  
                         self.level.current_layer = self.current_layer
                     if event.key == pygame.K_RIGHTBRACKET:
-                        self.current_layer = (self.current_layer - 1) % 3   
+                        self.current_layer = (self.current_layer - 1) % self.max_layers 
                         self.level.current_layer = self.current_layer
                     if event.key == pygame.K_SEMICOLON:
                         if self.loaded:

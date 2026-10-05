@@ -108,7 +108,6 @@ class Simulator:
         display2 = pygame.Surface((int(self.screen.get_width() // int(renderscale)), int(self.screen.get_height())))
         text = ""
         self.level.load_custom_map("data/allied/steel_test.json")
-        self.level.layering()
         #self.level.physics = {"steel_mid_two", "steel_upper_two", "steel_back", "steel_upper_one"}
         scroll = [0, 0]
         scroll2 = [0, 0]
@@ -180,7 +179,6 @@ class Simulator:
         title = TitleBar(self.font, self.display, "Simulator: Widget Testing")
         text = ""
         self.level.load_custom_map("data/allied/test_map.json")
-        self.level.layering()
         #self.level.physics = {"steel_mid_two", "steel_upper_two", "steel_back", "steel_upper_one"}
         scroll = [0, 0]
         while run:

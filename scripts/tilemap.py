@@ -7,10 +7,18 @@ from scripts.utils import join
 NEIGHBOR_OFFSETS = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 0], [0, 1], [1, -1], [1, 0], [1, 1]]
 
 class Tilemp:
-    def __init__(self, game, tilesize):
+    def __init__(self, game, tilesize, layered=True):
         self.game = game
         self.tilesize = tilesize
-        self.tilemap = {}
+        self.layered = layered
+        if self.layered:
+            self.tilemap = {"layer0": {}, "layer1": {}, "layer2": {}}
+            self.spawn_blocks = {"layer0": {}, "layer1": {}, "layer2": {}}
+            self.phys_blocks = {"layer0": {}, "layer1": {}, "layer2": {}}
+        else:
+            self.tilemap = {}
+            self.phys_blocks = {}
+            self.spawn_blocks = {}
         self.offgrid = []
         self.ongrid = {}
         self.ongrid_decor = set()
@@ -18,13 +26,11 @@ class Tilemp:
         self.offgrid_decor = set()
         self.spawners = set()
         self.decor = set()
-        self.layers = {}
         self.fluid = set()
         self.animated = set()
-        self.current_layer = 0
+        self.current_layer = 1
         self.blocks = set()
-        self.phys_blocks = {}
-        self.spawn_blocks = {}
+        
     
     def tiles_around(self, pos):
         tiles = []
@@ -59,71 +65,6 @@ class Tilemp:
         for tile in self.tiles_around(pos):
             rects.append(pygame.Rect(tile["pos"][0] * self.tilesize[0], tile["pos"][1] * self.tilesize[1], self.tilesize[0], self.tilesize[1]))
         return rects
-    
-    def layering(self):
-        layer0 = {}
-        layer1 = {}
-        layer2 = {}
-        for loc in self.tilemap:
-            tile = self.tilemap[loc]
-            if "layer" in tile:
-                if tile["layer"] == 0:
-                    layer0[loc] = tile
-                elif tile["layer"] == 1:
-                    layer1[loc] = tile
-                elif tile["layer"] == 2:
-                    layer2[loc] = tile
-            else:
-                layer2[loc] = tile
-        layers = [layer0, layer1, layer2]
-        self.layers[f"tile"] = layers
-        layer0 = {}
-        layer1 = {}
-        layer2 = {}
-        for loc in self.phys_blocks:
-            tile = self.phys_blocks[loc]
-            if "layer" in tile:
-                if tile["layer"] == 0:
-                    layer0[loc] = tile
-                elif tile["layer"] == 1:
-                    layer1[loc] = tile
-                elif tile["layer"] == 2:
-                    layer2[loc] = tile
-            else:
-                layer2[loc] = tile
-        layers = [layer0, layer1, layer2]
-        self.layers[f"block"] = layers
-        layer0 = {}
-        layer1 = {}
-        layer2 = {}
-        for loc in self.ongrid:
-            tile = self.ongrid[loc]
-            if "layer" in tile:
-                if tile["layer"] == 0:
-                    layer0[loc] = tile
-                elif tile["layer"] == 1:
-                    layer1[loc] = tile
-                elif tile["layer"] == 2:
-                    layer2[loc] = tile
-            else:
-                layer2[loc] = tile
-        layers = [layer0, layer1, layer2]
-        self.layers[f"ongrid"] = layers
-        layer0 = []
-        layer1 = []
-        layer2 = []
-        for tile in self.offgrid:
-            if "layer" in tile:
-                if tile["layer"] == 0:
-                    layer0[loc] = tile
-                elif tile["layer"] == 1:
-                    layer1[loc] = tile
-                elif tile["layer"] == 2:
-                    layer2[loc] = tile
-            else:
-                layer2[loc] = tile
-        layers = [layer0, layer1, layer2]
-        self.layers[f"offgrid"] = layers
     
     def tile_at(self, pos):
         tile_pos = [int(pos[0] // self.tilesize[0]), int(pos[1] // self.tilesize[1])]
@@ -189,78 +130,54 @@ class Tilemp:
             f.close()
 
     def draw(self, surf, offset=[0, 0]):
-        #print(f"{self.layers} is layers")
-        #print(f"{self.tilemap} is tilemap")
-        if self.layers:
-            for x in range(int(offset[0] // self.tilesize[0]), int((offset[0]+surf.get_width()+self.tilesize[0]) // self.tilesize[0])):
-                for y in range(int(offset[1] // self.tilesize[1]), int((offset[1]+surf.get_height()+self.tilesize[1]) // self.tilesize[1])):
-                    loc = str(x) + ";" + str(y)
-                    if loc in self.layers["tile"][0]:
-                        tile = self.tilemap[loc]
-                        img = self.game.assets[tile["type"]][tile["variant"]].copy()
-                        img.set_alpha(50 if self.current_layer != 0 else 255)
-                        surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
-                    if loc in self.layers["block"][0]:
-                        tile = self.phys_blocks[loc]
-                        img = pygame.Surface(self.tilesize)
-                        #img = pygame.Surface(tile["size"])
-                        pygame.draw.rect(img, tile["type"], [0, 0, self.tilesize[0], self.tilesize[1]], 0 if tile["variant"] == 0 else 2)
-                        #pygame.draw.rect(img, tile["type"], [0, 0, tile["size"][0], tile["size"][1]], 0 if tile["variant"] == 0 else 2)
-                        img.set_alpha(50 if self.current_layer != 0 else 255)
-                        surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
-                        #surf.blit(img, [tile["pos"][0] * tile["size"][0] - offset[0], tile["pos"][1] * tile["size"][1] - offset[1]])
-            for x in range(int(offset[0] // self.tilesize[0]), int((offset[0]+surf.get_width()+self.tilesize[0]) // self.tilesize[0])):
-                for y in range(int(offset[1] // self.tilesize[1]), int((offset[1]+surf.get_height()+self.tilesize[1]) // self.tilesize[1])):
-                    loc = str(x) + ";" + str(y)
-                    if loc in self.layers["tile"][1]:
-                        tile = self.tilemap[loc]
-                        img = self.game.assets[tile["type"]][tile["variant"]].copy()
-                        img.set_alpha(100 if self.current_layer != 1 else 255)
-                        surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
-                    if loc in self.layers["block"][1]:
-                        tile = self.phys_blocks[loc]
-                        img = pygame.Surface(self.tilesize)
-                        pygame.draw.rect(img, tile["type"], [0, 0, self.tilesize[0], self.tilesize[1]], 0 if tile["variant"] == 0 else 2)
-                        img.set_alpha(50 if self.current_layer != 1 else 255)
-                        surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
-            for x in range(int(offset[0] // self.tilesize[0]), int((offset[0]+surf.get_width()+self.tilesize[0]) // self.tilesize[0])):
-                for y in range(int(offset[1] // self.tilesize[1]), int((offset[1]+surf.get_height()+self.tilesize[1]) // self.tilesize[1])):
-                    loc = str(x) + ";" + str(y)
-                    if loc in self.layers["tile"][2]:
-                        tile = self.tilemap[loc]
-                        img = self.game.assets[tile["type"]][tile["variant"]].copy()
-                        img.set_alpha(150 if self.current_layer != 2 else 255)
-                        surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
-                    if loc in self.layers["block"][2]:
-                        tile = self.phys_blocks[loc]
-                        img = pygame.Surface(self.tilesize)
-                        pygame.draw.rect(img, tile["type"], [0, 0, self.tilesize[0], self.tilesize[1]], 0 if tile["variant"] == 0 else 2)
-                        img.set_alpha(50 if self.current_layer != 2 else 255)
-                        surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
-                    '''
-                    if loc in self.tilemap:
-                        tile = self.tilemap[loc]
-                        surf.blit(self.game.assets[tile["type"]][tile["variant"]], [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
-                    if loc in self.ongrid:
-                        tile = self.ongrid[loc]
-                        surf.blit(self.game.assets[tile["type"]][tile["variant"]], [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
-                    '''
+        for x in range(int(offset[0] // self.tilesize[0]), int((offset[0]+surf.get_width()+self.tilesize[0]) // self.tilesize[0])):
+            for y in range(int(offset[1] // self.tilesize[1]), int((offset[1]+surf.get_height()+self.tilesize[1]) // self.tilesize[1])):
+                loc = str(x) + ";" + str(y)
+                if loc in self.tilemap:
+                    tile = self.tilemap[loc]
+                    img = self.game.assets[tile["type"]][tile["variant"]].copy()
+                    img.set_alpha(50 if self.current_layer != 0 else 255)
+                    surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
+                if loc in self.phys_blocks:
+                    tile = self.phys_blocks[loc]
+                    img = pygame.Surface(self.tilesize)
+                    #img = pygame.Surface(tile["size"])
+                    pygame.draw.rect(img, tile["type"], [0, 0, self.tilesize[0], self.tilesize[1]], 0 if tile["variant"] == 0 else 2)
+                    #pygame.draw.rect(img, tile["type"], [0, 0, tile["size"][0], tile["size"][1]], 0 if tile["variant"] == 0 else 2)
+                    img.set_alpha(50 if self.current_layer != 0 else 255)
+                    surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
+                    #surf.blit(img, [tile["pos"][0] * tile["size"][0] - offset[0], tile["pos"][1] * tile["size"][1] - offset[1]])
+        
+                '''
+                if loc in self.tilemap:
+                    tile = self.tilemap[loc]
+                    surf.blit(self.game.assets[tile["type"]][tile["variant"]], [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
+                if loc in self.ongrid:
+                    tile = self.ongrid[loc]
+                    surf.blit(self.game.assets[tile["type"]][tile["variant"]], [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
+                '''
+
+    def draw_layers(self, surf,offset=[0, 0]):
+        for i in range(3):
+            self.draw_layer(surf=surf,layer=i, offset=offset)
+
+
     def draw_layer(self, surf, layer, offset=[0, 0]):
-        if self.layers:
-            for x in range(int(offset[0] // self.tilesize[0]), int((offset[0]+surf.get_width() + self.tilesize[0]) // self.tilesize[0])):
-                for y in range(int(offset[1] // self.tilesize[1]), int((offset[1]+surf.get_height() + self.tilesize[1]) // self.tilesize[1])):
-                    loc = str(x) + ";" + str(y)
-                    if loc in self.layers["tile"][layer]:
-                        tile = self.tilemap[loc]
-                        img = self.game.assets[tile["type"]][tile["variant"]].copy()
-                        #img.set_alpha(50 if self.current_layer != 0 else 255)
-                        surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
-                    if loc in self.layers["block"][1]:
-                        tile = self.phys_blocks[loc]
-                        img = pygame.Surface(self.tilesize)
-                        pygame.draw.rect(img, tile["type"], [0, 0, self.tilesize[0], self.tilesize[1]], 0 if tile["variant"] == 0 else 2)
-                        img.set_alpha(50 if self.current_layer != 2 else 255)
-                        surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
+        for x in range(int(offset[0] // self.tilesize[0]), int((offset[0]+surf.get_width() + self.tilesize[0]) // self.tilesize[0])):
+            for y in range(int(offset[1] // self.tilesize[1]), int((offset[1]+surf.get_height() + self.tilesize[1]) // self.tilesize[1])):
+                loc = str(x) + ";" + str(y)
+                tmap = "layer"+str(layer)
+                if loc in self.tilemap[tmap]:
+                    tile = self.tilemap[tmap][loc]
+                    img = self.game.assets[tile["type"]][tile["variant"]].copy()
+                    #img.set_alpha(50 if self.current_layer != 0 else 255)
+                    surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
+                if loc in self.phys_blocks[tmap]:
+                    tile = self.phys_blocks[tmap][loc]
+                    img = pygame.Surface(self.tilesize)
+                    pygame.draw.rect(img, tile["type"], [0, 0, self.tilesize[0], self.tilesize[1]], 0 if tile["variant"] == 0 else 2)
+                    img.set_alpha(50 if self.current_layer != 2 else 255)
+                    surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
 
 
 

@@ -65,7 +65,6 @@ class Scene:
             int_scrolls.append([0, 0])
         if len(self.levels) > 0:
             self.level.load_custom_map(self.levels[0])
-        self.level.layering()
         disp_conf = [[0, 0], [int(self.screen.get_width() // 2), 0]]
         while run:
             for display in displays:
