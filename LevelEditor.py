@@ -1,3 +1,5 @@
+from operator import is_
+
 import pygame
 import sys
 import os
@@ -360,6 +362,7 @@ class LevelEditor:
                 pillars.append(lis)
         offset = [0, 0]
         spread = [4, 4]
+        is_color = False
             
         while run:
             self.display.fill(self.bkg_color)
@@ -395,12 +398,23 @@ class LevelEditor:
                                 self.type_index = i
                                 self.current_index = x 
                                 run = False
-                        if img not in self.level.blocks: 
+
+                        try:
+                            pygame.Color(img)
+                            is_color = True
+                        except ValueError:
+                            is_color = False
+                        
+                        if img in self.level.blocks: 
                             #self.display.blit(img, [pos[0] - offset[0], pos[1]- offset[1]])
-                            self.display.blit(img, [rect.x, rect.y])
+                            pygame.draw.rect(self.display, img, rect, 2 if x == 1 else 0)
+                        elif img in self.level.spawners and is_color:
+                            pygame.draw.rect(self.display, img, rect, 2 if x == 1 else 0)
+                        elif img in self.level.fluid and is_color:
+                            pygame.draw.rect(self.display, img, rect, 2 if x == 1 else 0)
                         else:
                             #pygame.draw.rect(self.display, img, [pos[0] - offset[0], pos[1]- offset[1], 16, 16], 2 if x == 1 else 0)
-                            pygame.draw.rect(self.display, img, rect, 2 if x == 1 else 0)
+                            self.display.blit(img, [rect.x, rect.y])
 
             title.update()
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), [0, 0])
@@ -866,6 +880,7 @@ class LevelEditor:
         running = True
         sIdCounter = 0
         cur = pygame.Surface(self.tilesize)
+        is_color = False
         while running:
             self.dt = self.clock.tick(60) / 1000
             if self.loaded:
@@ -934,14 +949,22 @@ class LevelEditor:
                         if check in self.level.phys_blocks:
                             del self.level.phys_blocks[check]
                         if check in self.level.spawn_blocks:
-                            del self.level.spawn_blocks[check]
-
+                            del self.level.spawn_blocks[check] 
             
             self.level.draw_layers(self.display, self.scroll)
             if self.current:
-                if not self.current[self.current_index] in self.level.blocks:
+                try:
+                    pygame.Color(self.current[self.current_index])
+                    is_color = True
+                except ValueError:
+                    is_color = False
+                if not self.current[self.current_index] in self.level.blocks and not is_color:
                     img = self.current[self.current_index]
                     cur.blit(img,[0, 0])
+                elif self.current[self.current_index] in self.level.spawners and is_color:
+                    pygame.draw.rect(cur, self.current[self.current_index], [0, 0, self.tilesize[0], self.tilesize[1]])
+                elif self.current[self.current_index] in self.level.fluid and is_color:
+                    pygame.draw.rect(cur, self.current[self.current_index], [0, 0, self.tilesize[0], self.tilesize[1]])
                 else:
                     pygame.draw.rect(cur, self.current[self.current_index], [0, 0, self.tilesize[0], self.tilesize[1]])
                 cur.set_alpha(50)
