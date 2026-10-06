@@ -167,16 +167,31 @@ class Tilemp:
             for y in range(int(offset[1] // self.tilesize[1]), int((offset[1]+surf.get_height() + self.tilesize[1]) // self.tilesize[1])):
                 loc = str(x) + ";" + str(y)
                 tmap = "layer"+str(layer)
+                tem = 200
                 if loc in self.tilemap[tmap]:
                     tile = self.tilemap[tmap][loc]
+                    if "layer" in tile:
+                        if tile["layer"] == 0:
+                            tem = 50
+                        elif tile["layer"] == 1:
+                            tem = 200
+                        elif tile["layer"] == 2:
+                            tem = 255
                     img = self.game.assets[tile["type"]][tile["variant"]].copy()
-                    #img.set_alpha(50 if self.current_layer != 0 else 255)
+                    img.set_alpha(tem)
                     surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
                 if loc in self.phys_blocks[tmap]:
                     tile = self.phys_blocks[tmap][loc]
+                    if "layer" in tile:
+                        if tile["layer"] == 0:
+                            tem = 50
+                        elif tile["layer"] == 1:
+                            tem = 200
+                        elif tile["layer"] == 2:
+                            tem = 255
                     img = pygame.Surface(self.tilesize)
                     pygame.draw.rect(img, tile["type"], [0, 0, self.tilesize[0], self.tilesize[1]], 0 if tile["variant"] == 0 else 2)
-                    img.set_alpha(50 if self.current_layer != 2 else 255)
+                    img.set_alpha(tem)
                     surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
 
 
