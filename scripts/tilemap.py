@@ -15,10 +15,12 @@ class Tilemp:
             self.tilemap = {"layer0": {}, "layer1": {}, "layer2": {}}
             self.spawn_blocks = {"layer0": {}, "layer1": {}, "layer2": {}}
             self.phys_blocks = {"layer0": {}, "layer1": {}, "layer2": {}}
+            self.fluid_blocks = {"layer0": {}, "layer1": {}, "layer2": {}}
         else:
             self.tilemap = {}
             self.phys_blocks = {}
             self.spawn_blocks = {}
+            self.fluid_blocks = {}
         self.offgrid = []
         self.ongrid = {}
         self.ongrid_decor = set()
@@ -163,6 +165,7 @@ class Tilemp:
 
 
     def draw_layer(self, surf, layer, offset=[0, 0]):
+        is_color = False
         for x in range(int(offset[0] // self.tilesize[0]), int((offset[0]+surf.get_width() + self.tilesize[0]) // self.tilesize[0])):
             for y in range(int(offset[1] // self.tilesize[1]), int((offset[1]+surf.get_height() + self.tilesize[1]) // self.tilesize[1])):
                 loc = str(x) + ";" + str(y)
@@ -178,6 +181,16 @@ class Tilemp:
                         elif tile["layer"] == 2:
                             tem = 255
                     img = self.game.assets[tile["type"]][tile["variant"]].copy()
+                    try:
+                        pygame.Color(img)
+                        is_color = True
+                    except ValueError:
+                        is_color = False
+                    if is_color:
+                        img = pygame.Surface(self.tilesize)
+                        pygame.draw.rect(img, tile["type"], [0, 0, self.tilesize[0], self.tilesize[1]], 0 if tile["variant"] == 0 else 2)
+                    else:
+                        img = self.game.assets[tile["type"]][tile["variant"]].copy()
                     img.set_alpha(tem)
                     surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
                 if loc in self.phys_blocks[tmap]:
@@ -191,6 +204,48 @@ class Tilemp:
                             tem = 255
                     img = pygame.Surface(self.tilesize)
                     pygame.draw.rect(img, tile["type"], [0, 0, self.tilesize[0], self.tilesize[1]], 0 if tile["variant"] == 0 else 2)
+                    img.set_alpha(tem)
+                    surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
+                if loc in self.spawn_blocks[tmap]:
+                    tile = self.spawn_blocks[tmap][loc]
+                    if "layer" in tile:
+                        if tile["layer"] == 0:
+                            tem = 50
+                        elif tile["layer"] == 1:
+                            tem = 200
+                        elif tile["layer"] == 2:
+                            tem = 255
+                    try:
+                        pygame.Color(tile["type"])
+                        is_color = True
+                    except ValueError:
+                        is_color = False
+                    if is_color:
+                        img = pygame.Surface(self.tilesize)
+                        pygame.draw.rect(img, tile["type"], [0, 0, self.tilesize[0], self.tilesize[1]], 0 if tile["variant"] == 0 else 2)
+                    else:
+                        img = self.game.assets[tile["type"]][tile["variant"]].copy()
+                    img.set_alpha(tem)
+                    surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
+                if loc in self.fluid_blocks[tmap]:
+                    tile = self.fluid_blocks[tmap][loc]
+                    if "layer" in tile:
+                        if tile["layer"] == 0:
+                            tem = 50
+                        elif tile["layer"] == 1:
+                            tem = 200
+                        elif tile["layer"] == 2:
+                            tem = 255
+                    try:
+                        pygame.Color(tile["type"])
+                        is_color = True
+                    except ValueError:
+                        is_color = False
+                    if is_color:
+                        img = pygame.Surface(self.tilesize)
+                        pygame.draw.rect(img, tile["type"], [0, 0, self.tilesize[0], self.tilesize[1]], 0 if tile["variant"] == 0 else 2)
+                    else:
+                        img = self.game.assets[tile["type"]][tile["variant"]].copy()
                     img.set_alpha(tem)
                     surf.blit(img, [tile["pos"][0] * self.tilesize[0] - offset[0], tile["pos"][1] * self.tilesize[1] - offset[1]])
 

@@ -914,6 +914,8 @@ class LevelEditor:
                         if self.type in self.level.spawners:
                             self.level.spawn_blocks[layer_check][str(tile_pos[0]) + ";" + str(tile_pos[1])] = {"type": self.type, "variant": self.current_index, "pos":tile_pos, "team": "", "id": sIdCounter, "limit": 4, "limited": True, "layer": self.current_layer}
                             sIdCounter += 1
+                        if self.type in self.level.fluid:
+                            self.level.fluid_blocks[layer_check][str(tile_pos[0]) + ";" + str(tile_pos[1])] = {"type": self.type, "variant": self.current_index, "pos":tile_pos, "layer": self.current_layer}
                     elif mclick[2]:
                         layer_rep = "layer" + str(self.current_layer)
                         mpos = pygame.mouse.get_pos()
@@ -926,6 +928,8 @@ class LevelEditor:
                             del self.level.phys_blocks[layer_check][check]
                         if check in self.level.spawn_blocks[layer_check]:
                             del self.level.spawn_blocks[layer_check][check]
+                        if check in self.level.fluid_blocks[layer_check][check]:
+                            del self.level.fluid_blocks[layer_check][check]
                 else:
                     if mclick[0]:
                         mpos = pygame.mouse.get_pos()
@@ -938,6 +942,8 @@ class LevelEditor:
                         if self.type in self.level.spawners:
                             self.level.spawn_blocks[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {"type": self.type, "variant": self.current_index, "pos":tile_pos, "team": "", "id": sIdCounter, "limit": 4, "limited": True, "layer": self.current_layer}
                             sIdCounter += 1
+                        if self.type in self.level.fluid:
+                            self.level.fluid_blocks[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {"type": self.type, "variant": self.current_index, "pos":tile_pos, "layer": self.current_layer}
                     elif mclick[2]:
                         layer_rep = "layer" + str(self.current_layer)
                         mpos = pygame.mouse.get_pos()
@@ -950,6 +956,8 @@ class LevelEditor:
                             del self.level.phys_blocks[check]
                         if check in self.level.spawn_blocks:
                             del self.level.spawn_blocks[check] 
+                        if check in self.level.fluid_blocks[check]:
+                            del self.level.fluid_blocks[check]
             
             self.level.draw_layers(self.display, self.scroll)
             if self.current:
