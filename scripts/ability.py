@@ -4,7 +4,7 @@ from scripts.utils import dists
 
 
 class ShinraTensei:
-    def __init__(self, max=[60, 60]):
+    def __init__(self, max=[60, 60], team_id=0):
         self.max = list(max)
         self.color = "aqua"
         self.pos = []
@@ -13,6 +13,7 @@ class ShinraTensei:
         self.pushed = False
         self.dead = False
         self.params = {"max": max}
+        self.team_id = team_id
 
     def serialize(self):
         return {
@@ -21,7 +22,7 @@ class ShinraTensei:
         }
 
     def copy(self):
-        return ShinraTensei(max=self.max)
+        return ShinraTensei(max=self.max, team_id=self.team_id)
 
     def push(self, pos):
         self.pos = list(pos)
@@ -43,45 +44,46 @@ class ShinraTensei:
                 for player in players:
                     p_rect = player.get_collider()
                     rect = self.rect
-                    if rect.colliderect(p_rect):
-                        if rect.centerx  > p_rect.centerx:
-                            pushes["left"] = True
-                        if rect.centerx <= p_rect.centerx:
-                            pushes["right"] = True
-                        if rect.centery > p_rect.centery:
-                            pushes["up"] = True
-                        if rect.centery <= p_rect.centery:
-                            pushes["down"] = True
+                    if player.team_id != self.team_id:
+                        if rect.colliderect(p_rect):
+                            if rect.centerx  > p_rect.centerx:
+                                pushes["left"] = True
+                            if rect.centerx <= p_rect.centerx:
+                                pushes["right"] = True
+                            if rect.centery > p_rect.centery:
+                                pushes["up"] = True
+                            if rect.centery <= p_rect.centery:
+                                pushes["down"] = True
 
-                        hor = False
-                        vert = False
-                        if pushes["left"] or pushes["right"]:
-                            hor = True
-                        if pushes["down"] or pushes["up"]:
-                            vert = True
+                            hor = False
+                            vert = False
+                            if pushes["left"] or pushes["right"]:
+                                hor = True
+                            if pushes["down"] or pushes["up"]:
+                                vert = True
 
-                        if hor and vert:
-                            dist = dists(rect.center, p_rect.center)
-                            if dist[0] >= dist[1]:
-                                '''if pushes["left"]:
-                                    #p_rect.right = rect.left 
-                                    #player.pos[0] = p_rect.x
-                                    player.velocity[0] = -3
+                            if hor and vert:
+                                dist = dists(rect.center, p_rect.center)
+                                if dist[0] >= dist[1]:
+                                    '''if pushes["left"]:
+                                        #p_rect.right = rect.left 
+                                        #player.pos[0] = p_rect.x
+                                        player.velocity[0] = -3
+                                    else:
+                                        #p_rect.left = rect.right
+                                        #player.pos[0] = p_rect.x
+                                        player.velocity[0] = 3'''
+                                    player.get_pushed(["hor", -3 if pushes["left"] else 3])
                                 else:
-                                    #p_rect.left = rect.right
-                                    #player.pos[0] = p_rect.x
-                                    player.velocity[0] = 3'''
-                                player.get_pushed(["hor", -3 if pushes["left"] else 3])
-                            else:
-                                '''if pushes["up"]:
-                                    #p_rect.bottom = rect.top
-                                    #player.pos[1] = p_rect.y
-                                    player.velocity[1] = -3
-                                else:
-                                    #p_rect.top = rect.bottom
-                                    #player.pos[1] = p_rect.y
-                                    #player.velocity[1] = 3'''
-                                player.get_pushed(["vert", -3 if pushes["up"] else 3])
+                                    '''if pushes["up"]:
+                                        #p_rect.bottom = rect.top
+                                        #player.pos[1] = p_rect.y
+                                        player.velocity[1] = -3
+                                    else:
+                                        #p_rect.top = rect.bottom
+                                        #player.pos[1] = p_rect.y
+                                        #player.velocity[1] = 3'''
+                                    player.get_pushed(["vert", -3 if pushes["up"] else 3])
 
     def draw(self, surf, offset=[0, 0]):
         self.wave.update(surf, offset=offset)
@@ -96,3 +98,4 @@ class Turrent:
         self.rect = []
         self.image = []
         self.dead = False
+        self.team_id = 0

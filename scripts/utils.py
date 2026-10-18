@@ -2,6 +2,8 @@ import pygame
 import json
 import os
 
+from scripts.registry import resolve, register_type
+
 THEME_COLOR = (0, 10, 30)
 
 def load_image(path):
@@ -352,3 +354,187 @@ def make_dummy_dict(list1, save_list):
 
 def dists(point1, point2):
     return [abs(point1[0] - point2[0]), abs(point1[1] - point2[1])]
+
+# ============================================================
+# widget config building
+# ============================================================
+WIDGET_FIELDS = {
+    "Label":          [("text", str)],
+    "TextBox":        [("text", str)],
+    "Button":         [("text", str)],
+    "RectedButton":   [("text", str)],
+    "Button2":        [("txt", str)],
+    "Slider":         [("range_min", int), ("range_max", int), ("value", int)],
+    "VerticalSlider": [("range_min", int), ("range_max", int), ("value", int)],
+    "Table":          [("columns", int), ("rows", int)],
+    "Custom_Table":   [("columns", int), ("rows", int)],
+    "Dialog":         [("text", str), ("rate", int)],
+    "Checkbox":       [("label", str), ("checked", str)],
+    "ProgressBar":    [("value", int), ("max_value", int)],
+    "ToggleSwitch":   [("state", str)],
+    "ImageWidget":    [("image_path", str)],
+    "Panel":          [("border", int), ("color", str)],
+    "Dropdown":       [("options", str), ("selected", int)],
+}
+
+DEFAULT_WIDGET_COLORS = ("blue", "aqua")
+
+
+def widget_config_entries(config):
+    if isinstance(config, dict):
+        if "widgets" in config:
+            return config["widgets"]
+        if "config" in config and "new" in config["config"]:
+            return config["config"]["new"]
+        if "new" in config:
+            return config["new"]
+        return []
+    return list(config)
+
+
+def load_widget_config(path):
+    with open(path, "r") as f:
+        return json.load(f)
+
+
+def save_widget_config(path, entries):
+    with open(path, "w") as f:
+        json.dump({"widgets": entries}, f, indent=2)
+
+
+def fill_dummy_data(entry):
+    e = dict(entry)
+    t = e.get("type", "")
+    if t in ("Label", "TextBox") and not e.get("text"):
+        e["text"] = "Sample Text"
+    if t == "Button" and not e.get("text"):
+        e["text"] = "Button"
+    if t == "Button2" and not e.get("txt"):
+        e["txt"] = "Button2"
+    if t == "Dialog" and not e.get("text"):
+        e["text"] = "Dialog text"
+    if t in ("Table", "Custom_Table"):
+        e.setdefault("columns", 3)
+        e.setdefault("rows", 3)
+        if "text_items" not in e:
+            e["text_items"] = {
+                f"{c};{r}": f"c{c}r{r}"
+                for c in range(e["columns"]) for r in range(e["rows"])
+            }
+    if t == "Checkbox":
+        e.setdefault("label", "Check me")
+    if t == "ProgressBar":
+        e.setdefault("value", 45)
+        e.setdefault("max_value", 100)
+    if t == "Dropdown":
+        e.setdefault("options", ["Option A", "Option B", "Option C"])
+    if t in ("Slider", "VerticalSlider"):
+        e.setdefault("range_min", 0)
+        e.setdefault("range_max", 100)
+        e.setdefault("value", 50)
+    return e
+
+
+def _placeholder_surface():
+    return pygame.Surface([1, 1])
+
+
+def _bare_widget(cls, entry, font):
+    t = entry.get("type", "")
+    pos = entry.get("pos", [0, 0])
+    size = entry.get("size", [16, 16])
+    color = entry.get("color", "aqua")
+    colors = entry.get("colors", list(DEFAULT_WIDGET_COLORS))
+
+    if t in ("Label", "TextBox"):
+        return cls(entry.get("text", ""), pos, font, colors)
+    if t in ("Button", "RectedButton"):
+        return cls(pos, color, size)
+    if t == "Button2":
+        return cls(font, pos)
+    if t == "Slider":
+        return cls([entry.get("range_min", 0), entry.get("range_max", 100)], pos)
+    if t == "VerticalSlider":
+        return cls([entry.get("range_min", 0), entry.get("range_max", 100)], pos)
+    if t == "Table":
+        return cls(font, pos, entry.get("columns", 2), entry.get("rows", 2))
+    if t == "Custom_Table":
+        return cls(font, pos, size, entry.get("columns", 2), entry.get("rows", 2))
+    if t == "Dialog":
+        return cls(font, entry.get("text", ""), pos, size,
+                   entry.get("colors", ["aqua", "blue"]))
+    if t == "TitleBar":
+        return cls(font, _placeholder_surface(), entry.get("text", "Title"))
+    if t == "Checkbox":
+        return cls(pos, entry.get("label", ""), False, size, colors, font)
+    if t == "ProgressBar":
+        return cls(pos, size, entry.get("value", 0),
+                   entry.get("max_value", 100), colors)
+    if t == "ToggleSwitch":
+        return cls(pos, size, False, colors)
+    if t == "ImageWidget":
+        return cls(pos, entry.get("image_path", ""), size)
+    if t == "Panel":
+        return cls(pos, size, entry.get("color", "blue"))
+    if t == "Dropdown":
+        opts = entry.get("options")
+        if isinstance(opts, str):
+            opts = [o.strip() for o in opts.split(",") if o.strip()]
+        return cls(pos, opts, entry.get("selected", 0), size, colors, font)
+    return cls()
+
+
+def build_widget(entry, font=None):
+    t = entry.get("type", "")
+    if not t or t == "widget":
+        return None
+    cls = resolve(f"widget.{t}")
+    w = _bare_widget(cls, entry, font)
+    if hasattr(w, "deserialize"):
+        w.deserialize(entry)
+    return w
+
+
+def build_widgets(config, font=None):
+    return [w for w in (build_widget(e, font)
+                        for e in widget_config_entries(config))
+            if w is not None]
+
+
+def build_widgets_from_dummies(dummies, font=None):
+    entries = [fill_dummy_data(d.serialize()) for d in dummies
+               if getattr(d, "type", "") and d.type != "widget"]
+    return build_widgets(entries, font)
+
+
+def preview_widgets(widgets, font, resolution=(640, 480),
+                    scale=2, background=(0, 10, 30)):
+    """Standalone preview loop. ESC or window close exits."""
+    pygame.init()
+    screen = pygame.display.set_mode(resolution)
+    display = pygame.Surface((resolution[0] // scale, resolution[1] // scale))
+    clock = pygame.time.Clock()
+    running = True
+    while running:
+        display.fill(background)
+        for w in widgets:
+            w.update(display, [0, 0])
+        screen.blit(pygame.transform.scale(display, resolution), (0, 0))
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                running = False
+        pygame.display.flip()
+        clock.tick(60)
+    pygame.quit()
+
+
+def preview_menu(config, font_path="data/fonts/at01.ttf",
+                 resolution=(640, 480), scale=2):
+    """Preview directly from a config (path or dict)."""
+    raw = load_widget_config(config) if isinstance(config, str) else config
+    entries = [fill_dummy_data(e) for e in widget_config_entries(raw)]
+    font = pygame.font.Font(font_path, 16)
+    widgets = build_widgets(entries, font=font)
+    preview_widgets(widgets, font, resolution, scale)

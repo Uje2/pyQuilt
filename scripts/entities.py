@@ -21,6 +21,7 @@ class PhysicsEntity:
         self.rotated = False
         self.rotate_request = "vert"
         self.current_rot = "vert"
+        self.has_ability = False
         self.crouch = False
         #self.image = load_image(image_path)
         self.type = "force"
@@ -34,6 +35,8 @@ class PhysicsEntity:
         self.pushed = False
         self.params = {"origin": origin, "size": size, "offset": offset}
         self.push_value = 0
+        self.team_id = 0
+        
 
     def serialize(self):
         return {
@@ -62,6 +65,7 @@ class PhysicsEntity:
         self.crouch = serial["crouch"]
         self.gravity = serial["gravity"]
         self.pos = serial["pos"]
+        self.image = pygame.Surface(self.size)
         
     def get_collider(self):
         if not self.rotated:
@@ -71,7 +75,10 @@ class PhysicsEntity:
 
     def get_ability(self):
         if self.type == "force":
+            self.has_ability = True
             return ShinraTensei().copy()
+        if self.has_ability:
+            self.ability.team_id = self.team_id
 
     def activate_ability(self):
         if self.type == "force":
@@ -193,7 +200,8 @@ class PhysicsEntity:
             else:
                 self.direction[1] = 0
         if keys[pygame.K_g]:
-            self.game.abilities.append(self.activate_ability())
+            if self.has_ability:
+                self.game.abilities.append(self.activate_ability())
             
     def get_arrow_input(self):
         self.crouch = False
@@ -224,7 +232,8 @@ class PhysicsEntity:
             else:
                 self.direction[1] = 0
         if keys[pygame.K_k]:
-            self.game.abilities.append(self.activate_ability())
+            if self.has_ability:
+                self.game.abilities.append(self.activate_ability())
 
     def update(self, colliders, surf, offset=[0, 0]):
         if self.pid == 1:

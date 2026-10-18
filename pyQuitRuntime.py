@@ -5,6 +5,7 @@ from scripts.utils import Timer, button_control2, mouse_scroll_silders, slider_h
 from scripts.tilemap import Tilemp
 from scripts.entities import PhysicsEntity
 import json
+from scripts.registry import create
 
 class Scene:
     def __init__(self, game_config):
@@ -48,6 +49,15 @@ class Scene:
         self.id = give_ids(self.players, self.id)
         self.levels = data["level"]
         self.abilities = []
+        self.entities = []
+        for ent_data in data["entities"]:
+            ent_data = dict(ent_data)             # don't mutate config
+            type_name = ent_data.pop("type")
+            ent = create(type_name, self, [0, 0])
+            ent.deserialize(ent_data)
+            self.entities.append(ent)
+        self.id = give_ids(self.entities, self.id)
+        self.all_entities = self.players + self.entities
 
 
     
@@ -73,6 +83,7 @@ class Scene:
                 scrolls[i][0] += (player.get_collider().centerx - displays[i].get_width() / 2) - scrolls[i][0]
                 scrolls[i][1] += (player.get_collider().centery- displays[i].get_height() / 2) - scrolls[i][1]
                 int_scrolls[i] = [int(scrolls[i][0]), int(scrolls[i][1])]
+
             
             for i, player in enumerate(self.players):
                 id = player.id
@@ -90,6 +101,22 @@ class Scene:
                     player.draw_collider(display, int_scrolls[y])
                     self.level.draw(display, int_scrolls[y])
                     self.screen.blit(pygame.transform.scale(display, main_dimensions), disp_conf[y])
+                    for i, player in enumerate(self.players):
+                        id = player.id
+                        player.no_display_update(self.level.physics_around(player.pos))
+                        for ability in self.abilities[:]:
+                            if ability[0] == id:
+                                temp = self.players.copy()
+                                temp.remove(player)
+                                ability[1].update(temp)
+                            if ability[1].dead:
+                                self.abilities.remove(ability)
+                            for x, display in enumerate(displays):
+                                ability[1].draw(display, int_scrolls[x])
+                        for y, display in enumerate(displays):
+                            player.draw_collider(display, int_scrolls[y])
+                            self.level.draw(display, int_scrolls[y])
+                            self.screen.blit(pygame.transform.scale(display, main_dimensions), disp_conf[y])
             #self.screen.blit(pygame.transform.scale(displays[1], main_dimensions), [int(self.screen.get_width() // 2), 0])
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
